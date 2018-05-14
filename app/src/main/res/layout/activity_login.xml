@@ -65,8 +65,9 @@
             android:paddingRight="5dp"
             android:textSize="10dp"
             android:textColor="#fdfffa"
+            android:onClick ="buLogin"
             />
-        <!--android:onClick="buLogin" -->
+
 
 
     </LinearLayout>

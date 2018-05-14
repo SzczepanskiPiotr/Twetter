@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "762392040637-sspend8rld7bfervm8d0bcddvclu223k.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "sdp.project.twitter",
+            "certificate_hash": "42dd73455d9d73aa297525fc2db212883f458b4f"
+          }
+        },
+        {
           "client_id": "762392040637-tji8ik2vttgecenllt8ccau30m429bln.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
