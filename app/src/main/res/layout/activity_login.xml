@@ -8,7 +8,7 @@
     android:paddingLeft="16px"
     android:paddingRight="16px"
     android:paddingTop="16px"
-    tools:context="sdp.project.twitter.Login">
+    tools:context="sdp.project.twitter.LoginActivity">
 
     <LinearLayout
         android:gravity="center"
@@ -27,34 +27,11 @@
         <EditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textEmailAddress"
-            android:ems="10"
-            android:id="@+id/etEmail"
-            android:hint="enter email" />
-
-        <EditText
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
             android:inputType="textPassword"
             android:ems="10"
             android:id="@+id/etPassword"
             android:hint="enter password" />
 
-        <ImageView
-            android:adjustViewBounds="true"
-            android:scaleType="fitCenter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/nonameuser"
-            android:layout_marginLeft="5dp"
-            android:layout_marginRight="5dp"
-            android:id="@+id/ivUserImage"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true"
-            android:layout_alignBottom="@+id/txtflollower"
-            android:layout_weight="0"
-            android:layout_marginBottom="1dp" />
         <Button
             android:layout_width="195px"
             android:layout_height="60dp"
@@ -68,6 +45,13 @@
             android:onClick ="buLogin"
             />
 
+        <TextView
+            android:id="@+id/goToRegister"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginTop="20dp"
+            android:text="Tap here to register" />
 
 
     </LinearLayout>
