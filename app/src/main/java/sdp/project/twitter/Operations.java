@@ -16,12 +16,12 @@ public class Operations {
 
         BufferedReader bureader = new BufferedReader( new InputStreamReader(inputStream));
         String line;
-        String linereultcal="";
+        String finalInput="";
 
         try{
             while((line=bureader.readLine())!=null) {
 
-                linereultcal+=line;
+                finalInput+=line;
 
             }
             inputStream.close();
@@ -29,6 +29,6 @@ public class Operations {
 
         }catch (Exception ex){}
 
-        return linereultcal;
+        return finalInput;
     }
 }

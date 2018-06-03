@@ -18,18 +18,23 @@ public class SaveSettings {
 
 
     void SaveData(String UserID){
-        this.UserID = UserID;
         SharedPreferences.Editor editor = sharedRef.edit();
         editor.putString("UserID", UserID);
         editor.commit();
+        LoadData();
     }
 
     void LoadData(){
         UserID = sharedRef.getString("UserID", "0");
         if(UserID.equals("0")){
-            Intent intent = new Intent(context, Login.class);
+            Intent intent = new Intent(context, LoginActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         }
+    }
+
+    void ClearData(){
+        sharedRef.edit().remove("UserID").commit();
+        this.LoadData();
     }
 }

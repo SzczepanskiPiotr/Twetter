@@ -48,7 +48,7 @@ import java.util.Date;
 
 import sdp.project.tweeter.R;
 
-public class Login extends AppCompatActivity {
+public class RegisterActivity extends AppCompatActivity {
 
     EditText etName;
     EditText etEmail;
@@ -63,7 +63,7 @@ public class Login extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
+        setContentView(R.layout.activity_register);
         etName = findViewById(R.id.etName);
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
@@ -91,16 +91,16 @@ public class Login extends AppCompatActivity {
         };
     }
 
-    public void buLogin(View view){
+    public void buRegister(View view){
         showProgressDialog();
         FirebaseStorage storage=FirebaseStorage.getInstance();
-        // Create a storage reference from our app
+        // Create a storage reference
         StorageReference storageRef = storage.getReferenceFromUrl("gs://tweeter-55347.appspot.com/");
         DateFormat df = new SimpleDateFormat("ddMMyyHHmmss");
         Date dateobj = new Date();
 
         final String ImagePath= df.format(dateobj) +".jpg";
-        final StorageReference mountainsRef = storageRef.child("images/"+ ImagePath);
+        final StorageReference avatarsStorage = storageRef.child("images/"+ ImagePath);
         ivUserImage.setDrawingCacheEnabled(true);
         ivUserImage.buildDrawingCache();
         // Bitmap bitmap = imageView.getDrawingCache();
@@ -110,7 +110,7 @@ public class Login extends AppCompatActivity {
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
         byte[] data = baos.toByteArray();
 
-        UploadTask uploadTask = mountainsRef.putBytes(data);
+        UploadTask uploadTask = avatarsStorage.putBytes(data);
         uploadTask.addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception exception) {
@@ -120,7 +120,7 @@ public class Login extends AppCompatActivity {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                 // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download URL.
-                String downloadUrl = mountainsRef.getDownloadUrl().toString();
+                String downloadUrl = avatarsStorage.getDownloadUrl().toString();
                 String name="";
                 try {
                     //for space with name
@@ -129,7 +129,6 @@ public class Login extends AppCompatActivity {
                 } catch (UnsupportedEncodingException e) {
 
                 }
-                //TODO:  login and register
                 if(etName.getText().toString().equals("") || etEmail.getText().toString().equals("") || etPassword.getText().toString().equals("")){
                     hideProgressDialog();
                     Toast.makeText( getApplicationContext(),"One of the fields is empty!" , Toast.LENGTH_SHORT).show();
@@ -181,7 +180,6 @@ public class Login extends AppCompatActivity {
             mProgressDialog.setMessage("loading");
             mProgressDialog.setIndeterminate(true);
         }
-
         mProgressDialog.show();
     }
 
@@ -225,7 +223,6 @@ public class Login extends AppCompatActivity {
 
     void LoadImage(){
         Intent i = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-
         startActivityForResult(i, RESULT_LOAD_IMAGE);
     }
 
@@ -248,13 +245,14 @@ public class Login extends AppCompatActivity {
     }
 
     public class MyAsyncTaskGetNews extends AsyncTask<String, String, String> {
+
         @Override
         protected void onPreExecute() {
             //before works
         }
+
         @Override
         protected String doInBackground(String... params) {
-            // TODO Auto-generated method stub
             try {
                 String NewsData;
                 //define the url we have to connect with
@@ -276,26 +274,28 @@ public class Login extends AppCompatActivity {
                     //end connection
                     urlConnection.disconnect();
                 }
-
             }catch (Exception ex){}
             return null;
         }
 
         protected void onProgressUpdate(String... progress) {
-
             try {
                 JSONObject json= new JSONObject(progress[0]);
                 //display response data
                 if (json.getString("msg")==null)
                     return;
+                if (json.getString("msg").equalsIgnoreCase("fail")) {
+                    hideProgressDialog();
+                    Toast.makeText(getApplicationContext(),"Cannot create this account",Toast.LENGTH_LONG).show();
+                    return;
+                }
                 if (json.getString("msg").equalsIgnoreCase("user is added")) {
                     Toast.makeText(getApplicationContext(), json.getString("msg"), Toast.LENGTH_LONG).show();
-//login
-                    String url="https://pszczepanski.000webhostapp.com/Login.php?email="+etEmail.getText().toString()+"&password="+etPassword.getText().toString() ;
-
+                    String name="";
+                    name = java.net.URLEncoder.encode( etName.getText().toString() , "UTF-8");
+                    String url="https://pszczepanski.000webhostapp.com/Login.php?username="+name+"&password="+etPassword.getText().toString() ;
                     new MyAsyncTaskGetNews().execute(url);
                 }
-
                 if (json.getString("msg").equalsIgnoreCase("Pass Login")) {
                     JSONArray UserInfo = new JSONArray( json.getString("info"));
                     JSONObject UserCredential = UserInfo.getJSONObject(0);
@@ -305,7 +305,6 @@ public class Login extends AppCompatActivity {
                     saveSettings.SaveData(UserCredential.getString("user_id"));
                     finish(); //close this activity
                 }
-
             } catch (Exception ex) {
                 Log.d("er",  ex.getMessage());
             }
