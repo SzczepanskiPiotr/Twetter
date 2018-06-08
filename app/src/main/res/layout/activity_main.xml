@@ -106,16 +106,14 @@
                     android:id="@+id/buFollow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Follow"
-                    android:layout_alignParentTop="true"
-                    android:layout_alignParentLeft="true"
                     android:layout_alignParentStart="true"
-                    android:background="@drawable/roundbutton2"
-                    android:textSize="10dp"
-                    android:textColor="#fdfffa"
+                    android:layout_alignParentTop="true"
+                    android:layout_weight="0"
+                    android:background="@drawable/press_button_gradient_blue"
                     android:onClick="buFollowers"
-                    android:layout_weight="0" />
-
+                    android:text="Follow"
+                    android:textColor="#fdfffa"
+                    android:textSize="10dp" />
             </LinearLayout>
         </LinearLayout>
 

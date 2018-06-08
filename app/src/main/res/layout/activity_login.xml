@@ -37,7 +37,7 @@
             android:layout_height="60dp"
             android:text="Login"
             android:id="@+id/bulogin"
-            android:background="@drawable/roundbutton"
+            android:background="@drawable/round_background_blue"
             android:layout_marginTop="10dp"
             android:paddingRight="5dp"
             android:textSize="10dp"
