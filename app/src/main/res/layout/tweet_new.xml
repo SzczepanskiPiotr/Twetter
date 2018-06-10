@@ -36,7 +36,7 @@
             android:layout_height="wrap_content"
             android:ems="10"
             android:gravity="right"
-            android:text="0/50"
+            android:text="0/150"
             android:paddingLeft="10dp"
             android:textColor="#ffffff" />
 
@@ -73,6 +73,11 @@
                 android:layout_height="25dp"
                 android:layout_marginRight="8dp"
                 android:background="@drawable/attach"/>
+            <ImageView
+                android:id="@+id/iv_temp"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:layout_marginRight="8dp" />
         </LinearLayout>
 
         <LinearLayout

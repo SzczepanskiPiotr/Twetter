@@ -93,19 +93,19 @@ public class RegisterActivity extends AppCompatActivity {
 
     public void buRegister(View view){
         showProgressDialog();
-        FirebaseStorage storage=FirebaseStorage.getInstance();
+        FirebaseStorage storage = FirebaseStorage.getInstance();
         // Create a storage reference
-        StorageReference storageRef = storage.getReferenceFromUrl("gs://tweeter-55347.appspot.com/");
+        StorageReference storageRef = storage.getReferenceFromUrl("gs://tweeter-55347.appspot.com");
         DateFormat df = new SimpleDateFormat("ddMMyyHHmmss");
         Date dateobj = new Date();
 
         final String ImagePath= df.format(dateobj) +".jpg";
-        final StorageReference avatarsStorage = storageRef.child("images/"+ ImagePath);
+        final StorageReference avatarsStorage = storageRef.child(ImagePath);
         ivUserImage.setDrawingCacheEnabled(true);
         ivUserImage.buildDrawingCache();
         // Bitmap bitmap = imageView.getDrawingCache();
-        BitmapDrawable drawable=(BitmapDrawable)ivUserImage.getDrawable();
-        Bitmap bitmap =drawable.getBitmap();
+        BitmapDrawable drawable = (BitmapDrawable)ivUserImage.getDrawable();
+        Bitmap bitmap = drawable.getBitmap();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
         byte[] data = baos.toByteArray();
@@ -119,26 +119,30 @@ public class RegisterActivity extends AppCompatActivity {
         }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download URL.
-                String downloadUrl = avatarsStorage.getDownloadUrl().toString();
-                String name="";
-                try {
-                    //for space with name
-                    name = java.net.URLEncoder.encode( etName.getText().toString() , "UTF-8");
-                    downloadUrl= java.net.URLEncoder.encode(downloadUrl , "UTF-8");
-                } catch (UnsupportedEncodingException e) {
+                avatarsStorage.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                    @Override
+                    public void onSuccess(Uri uri) {
+                        // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download URL.
+                        Uri downloadUri = uri;
+                        String downloadUrl = downloadUri.toString();
+                        String name = "";
+                        try {
+                            //for space with name
+                            name = java.net.URLEncoder.encode(etName.getText().toString(), "UTF-8");
+                            downloadUrl = java.net.URLEncoder.encode(downloadUrl, "UTF-8");
+                        } catch (UnsupportedEncodingException e) {
 
-                }
-                if(etName.getText().toString().equals("") || etEmail.getText().toString().equals("") || etPassword.getText().toString().equals("")){
-                    hideProgressDialog();
-                    Toast.makeText( getApplicationContext(),"One of the fields is empty!" , Toast.LENGTH_SHORT).show();
+                        }
+                        if (etName.getText().toString().equals("") || etEmail.getText().toString().equals("") || etPassword.getText().toString().equals("")) {
+                            hideProgressDialog();
+                            Toast.makeText(getApplicationContext(), "One of the fields is empty!", Toast.LENGTH_SHORT).show();
 
-                }else{
-                    String url = "https://pszczepanski.000webhostapp.com/Register.php?username=" + name + "&email=" + etEmail.getText().toString() + "&password=" + etPassword.getText().toString() + "&picture_path=" + downloadUrl;
-                    new MyAsyncTaskGetNews().execute(url);
-                }
-                //hideProgressDialog();
-
+                        } else {
+                            String url = "https://pszczepanski.000webhostapp.com/Register.php?username=" + name + "&email=" + etEmail.getText().toString() + "&password=" + etPassword.getText().toString() + "&picture_path=" + downloadUrl;
+                            new MyAsyncTaskGetNews().execute(url);
+                        }
+                    }
+                });
             }
         });
     }
