@@ -158,6 +158,15 @@
                 android:layout_height="25dp"
                 android:layout_marginRight="8dp"
                 android:background="@drawable/favourite" />
+            <TextView
+                android:id="@+id/txt_favouriteCount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:gravity="left"
+                android:text=""
+                android:paddingLeft="10dp"
+                android:textColor="#ffffff" />
         </LinearLayout>
 
         <LinearLayout
