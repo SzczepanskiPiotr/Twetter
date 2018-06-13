@@ -9,10 +9,13 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.annotation.VisibleForTesting;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -34,7 +37,6 @@ import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -59,6 +61,7 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 
 import sdp.project.tweeter.R;
@@ -119,6 +122,8 @@ public class MainActivity extends AppCompatActivity {
         ListView lsNews = findViewById(R.id.LVNews);
         lsNews.setAdapter(myTweetWall);//intisal with data
         LoadTweets(0,SearchType.MyFollowing);
+
+        Log.i("UserID", User.getInstance(getApplicationContext()).getUserID());
     }
 
 
@@ -218,15 +223,22 @@ public class MainActivity extends AppCompatActivity {
             Operation = 2;
             buFollow.setText("Follow");
         }
-        String url = "https://pszczepanski.000webhostapp.com/UserFollowing.php?user_id=" + SaveSettings.UserID + "&following_user_id=" + SelectedUserID + "&op=" + Operation;
+        String url = "https://pszczepanski.000webhostapp.com/UserFollowing.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&following_user_id=" + SelectedUserID + "&op=" + Operation;
         new  MyAsyncTaskgetNews().execute(url);
     }
 
     ImageView iv_temp;
     TextView etCounter;
+    int counter;
     EditText etPost;
     String downloadUrl = null;
     String tweets;
+
+    Boolean loadedImage = false;
+    String loadImagePath = "";
+
+    int id;
+
 
     private class TweetWall extends BaseAdapter {
 
@@ -237,7 +249,6 @@ public class MainActivity extends AppCompatActivity {
             this.tweetWallAdapter = tweetWallAdapter;
             this.context = context;
         }
-
 
         @Override
         public int getCount() {
@@ -262,13 +273,19 @@ public class MainActivity extends AppCompatActivity {
             if (t.tweet_date.equals("add")) {
                 LayoutInflater mInflater = getLayoutInflater();
                 View myView = mInflater.inflate(R.layout.tweet_new, null);
-
                 etCounter = myView.findViewById(R.id.etCounter);
+                etCounter.setText(counter+"/150");
                 etPost = myView.findViewById(R.id.etPost);
+                etPost.setText(tweets);
+                etPost.setSelection(etPost.getText().length());
                 ImageView iv_post = myView.findViewById(R.id.iv_post);
                 ImageView iv_attach = myView.findViewById(R.id.iv_attach);
                 iv_temp = myView.findViewById(R.id.iv_temp);
                 iv_temp.setVisibility(ImageView.GONE);
+                if(loadedImage == true){
+                    iv_temp.setImageBitmap(BitmapFactory.decodeFile(loadImagePath));
+                    iv_temp.setVisibility(ImageView.VISIBLE);
+                }
                 iv_attach.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
@@ -297,7 +314,7 @@ public class MainActivity extends AppCompatActivity {
                             Date dateobj = new Date();
                             // System.out.println(df.format(dateobj));
                             // Create a reference to "mountains.jpg"
-                            String myDownloadUrl = SaveSettings.UserID + "_" + df.format(dateobj) + ".jpg";
+                            String myDownloadUrl = User.getInstance(getApplicationContext()).getUserID() + "_" + df.format(dateobj) + ".jpg";
                             final StorageReference picRef = storageRef.child(myDownloadUrl);
                             iv_temp.setDrawingCacheEnabled(true);
                             iv_temp.buildDrawingCache();
@@ -322,20 +339,19 @@ public class MainActivity extends AppCompatActivity {
                                             downloadUrl = downloadUri.toString();
                                             hideProgressDialog();
                                             Toast.makeText(context,"Tweet added",Toast.LENGTH_SHORT).show();
-                                            String url = "https://pszczepanski.000webhostapp.com/TweetAdd.php?user_id=" + SaveSettings.UserID + "&tweet_text=" + tweets + "&tweet_picture=" + downloadUrl;
+                                            String url = "https://pszczepanski.000webhostapp.com/TweetAdd.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&tweet_text=" + tweets + "&tweet_picture=" + downloadUrl;
                                             new MyAsyncTaskgetNews().execute(url);
                                         }
                                     });
                                 }
                             });
                             }else {
-                                String url = "https://pszczepanski.000webhostapp.com/TweetAdd.php?user_id=" + SaveSettings.UserID + "&tweet_text=" + tweets + "&tweet_picture=" + downloadUrl;
+                                String url = "https://pszczepanski.000webhostapp.com/TweetAdd.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&tweet_text=" + tweets + "&tweet_picture=" + downloadUrl;
                                 new MyAsyncTaskgetNews().execute(url);
                             }
                             //etPost.setText("");
                         }
                         else Toast.makeText(context,"Tweet is too long",Toast.LENGTH_SHORT).show();
-
                     }
                 });
 
@@ -344,7 +360,8 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     public void onTextChanged(CharSequence s, int start, int before, int count) {
-                        //This sets a textview to the current length
+                        counter = s.length();
+                        tweets = s.toString();
                         etCounter.setText(String.valueOf(s.length())+"/150");
                         if(s.length()>150){
                             etCounter.setTextColor(Color.RED);
@@ -358,6 +375,7 @@ public class MainActivity extends AppCompatActivity {
                 };
                 etPost.addTextChangedListener(mTextEditorWatcher);
                 return myView;
+
             } else if (t.tweet_date.equals("loading")) {
                 LayoutInflater mInflater = getLayoutInflater();
                 View myView = mInflater.inflate(R.layout.tweet_load, null);
@@ -376,11 +394,11 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(View view) {
                         SelectedUserID = Integer.parseInt(t.user_id);
-                        if(Integer.parseInt(SaveSettings.UserID) != SelectedUserID){
+                        if(Integer.parseInt(User.getInstance(getApplicationContext()).getUserID()) != SelectedUserID){
                             LoadTweets(0, SearchType.OnePerson);
                             txtnamefollowers.setText(t.username);
                             Picasso.get().load(t.picture_path).into(iv_channel_icon);
-                            String url = "https://pszczepanski.000webhostapp.com/IsFollowing.php?user_id=" + SaveSettings.UserID + "&following_user_id=" + SelectedUserID;
+                            String url = "https://pszczepanski.000webhostapp.com/IsFollowing.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&following_user_id=" + SelectedUserID;
                             new MyAsyncTaskgetNews().execute(url);
                         }
                     }
@@ -395,6 +413,36 @@ public class MainActivity extends AppCompatActivity {
                 Picasso.get().load(t.tweet_picture).into(tweet_picture);
                 ImageView picture_path = myView.findViewById(R.id.picture_path);
                 Picasso.get().load(t.picture_path).into(picture_path);
+
+                final ImageView iv_share = myView.findViewById(R.id.iv_share);
+
+                iv_share.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        id = tweetWall.indexOf(t);
+                        int Operation;
+                        if(iv_share.getBackground().getConstantState() == getResources().getDrawable(R.drawable.favourite).getConstantState()){
+                            Operation = 1;
+                            iv_share.setBackgroundResource(R.drawable.favourited);
+                        }
+                        else{
+                            iv_share.setBackgroundResource(R.drawable.favourite);
+                            Operation = 2;
+                        }
+                        String url = "https://pszczepanski.000webhostapp.com/Favourite.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&tweet_id=" + t.tweet_id + "&op=" + Operation;
+                        Log.i("URL",""+url);
+                        new  MyAsyncTaskgetNews().execute(url);
+                    }
+                });
+
+                if(!t.isFavourite)
+                    iv_share.setBackgroundResource(R.drawable.favourite);
+                else
+                    iv_share.setBackgroundResource(R.drawable.favourited);
+
+                TextView favouriteCount = myView.findViewById(R.id.txt_favouriteCount);
+                favouriteCount.setText(""+t.favouriteCount);
+
                 return myView;
             }
         }
@@ -450,6 +498,8 @@ public class MainActivity extends AppCompatActivity {
 
                 iv_temp.setImageBitmap(BitmapFactory.decodeFile(picturePath));
                 iv_temp.setVisibility(ImageView.VISIBLE);
+                loadedImage = true;
+                loadImagePath = picturePath;
             }
         }
 
@@ -489,6 +539,7 @@ public class MainActivity extends AppCompatActivity {
                 return null;
             }
 
+            @RequiresApi(api = Build.VERSION_CODES.N)
             protected void onProgressUpdate(String... progress) {
                 try {
                     JSONObject json = new JSONObject(progress[0]);
@@ -497,6 +548,7 @@ public class MainActivity extends AppCompatActivity {
                         return;
 
                     if (json.getString("msg").equalsIgnoreCase("tweet is added")) {
+                        Log.i("LOL","WHY");
                         LoadTweets(0, TweetsType);
                     } else if (json.getString("msg").equalsIgnoreCase("has tweet")) {
                         if (StartFrom == 0) {
@@ -519,13 +571,15 @@ public class MainActivity extends AppCompatActivity {
                                     js.getString("tweet_text"), js.getString("tweet_picture"),
                                     js.getString("tweet_date"), js.getString("user_id"), js.getString("username")
                                     , js.getString("picture_path")));
-                        }
 
+                            //id = Integer.parseInt(js.getString("tweet_id"));
+                            String url = "https://pszczepanski.000webhostapp.com/IsFavourite.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&tweet_id=" + js.getString("tweet_id");
+                            new MyAsyncTaskgetNews().execute(url);
+                        }
 
                         myTweetWall.notifyDataSetChanged();
 
                     } else if (json.getString("msg").equalsIgnoreCase("no tweet")) {
-                        Log.i("lol",SaveSettings.UserID);
                         //remove we are loading now
                         if (StartFrom == 0) {
                             tweetWall.clear();
@@ -543,7 +597,26 @@ public class MainActivity extends AppCompatActivity {
                         buFollow.setPressed(true);
                     } else if (json.getString("msg").equalsIgnoreCase("is not subscriber")) {
                         buFollow.setText("Follow");
-                    }
+                    } else if (json.getString("msg").equalsIgnoreCase("favourite is updated")){
+                        tweetWall.get(id).isFavourite = !tweetWall.get(id).isFavourite ;
+                        JSONObject UserInfo = new JSONObject( json.getString("info"));
+                        //JSONObject UserCredential = UserInfo.getJSONObject(0);
+                        //Log.i("count",UserInfo.getString("count(tweet_id)"));
+                        tweetWall.get(id).favouriteCount  = UserInfo.getString("count(tweet_id)");
+                    } else if (json.getString("msg").equalsIgnoreCase("is favourite")){
+                        JSONArray UserInfo = new JSONArray( json.getString("info"));
+                        JSONObject UserCredential = UserInfo.getJSONObject(0);
+                        findTweetByID(tweetWall,UserCredential.getString("tweet_id")).isFavourite = true;
+                        JSONObject FavouriteCount = new JSONObject( json.getString("count"));
+                        Log.i("count",FavouriteCount.getString("count(tweet_id)"));
+                        findTweetByID(tweetWall,UserCredential.getString("tweet_id")).favouriteCount  = FavouriteCount.getString("count(tweet_id)");
+                    } else if (json.getString("msg").equalsIgnoreCase("is not favourite")){
+                        JSONObject FavouriteCount = new JSONObject( json.getString("count"));
+                        if(!FavouriteCount.getString("tweet_id").equals("null")){
+                            Log.i("count",FavouriteCount.getString("tweet_id"));
+                            findTweetByID(tweetWall,FavouriteCount.getString("tweet_id")).favouriteCount  = FavouriteCount.getString("count(tweet_id)");
+                        }
+                }
 
                 } catch (Exception ex) {
                     Log.d("er", ex.getMessage());
@@ -554,13 +627,23 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 myTweetWall.notifyDataSetChanged();
-                downloadUrl=null;
+
             }
 
             protected void onPostExecute(String result2) {
+                downloadUrl = null;
+                loadedImage = false;
+                tweets = "";
+                counter = 0;
+                id = 0;
             }
         }
 
+
+        @RequiresApi(api = Build.VERSION_CODES.N)
+        public static TweetItem findTweetByID(Collection<TweetItem> tweetWall, String tweetID) {
+        return tweetWall.stream().filter(tweet_ID -> tweetID.equals(tweet_ID.tweet_id)).findFirst().orElse(null);
+    }
         void LoadTweets(int StartFrom, int TweetType) {
             this.StartFrom = StartFrom;
             this.TweetsType = TweetType;
@@ -574,9 +657,9 @@ public class MainActivity extends AppCompatActivity {
 
             myTweetWall.notifyDataSetChanged();
 
-            String url = "https://pszczepanski.000webhostapp.com/TweetList.php?user_id=" + SaveSettings.UserID + "&StartFrom=" + StartFrom + "&op=" + TweetType;
+            String url = "https://pszczepanski.000webhostapp.com/TweetList.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&StartFrom=" + StartFrom + "&op=" + TweetType;
             if (TweetType == SearchType.SearchIn)
-                url = "https://pszczepanski.000webhostapp.com/TweetList.php?user_id=" + SaveSettings.UserID + "&StartFrom=" + StartFrom + "&op=" + TweetType + "&query=" + Query;
+                url = "https://pszczepanski.000webhostapp.com/TweetList.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&StartFrom=" + StartFrom + "&op=" + TweetType + "&query=" + Query;
             if (TweetType == SearchType.OnePerson)
                 url = "https://pszczepanski.000webhostapp.com/TweetList.php?user_id=" + SelectedUserID + "&StartFrom=" + StartFrom + "&op=" + TweetType;
 

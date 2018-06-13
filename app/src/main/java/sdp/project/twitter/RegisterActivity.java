@@ -306,7 +306,7 @@ public class RegisterActivity extends AppCompatActivity {
                     //Toast.makeText(getApplicationContext(),UserCredential.getString("user_id"),Toast.LENGTH_LONG).show();
                     hideProgressDialog();
                     SaveSettings saveSettings = new SaveSettings(getApplicationContext());
-                    saveSettings.SaveData(UserCredential.getString("user_id"));
+                    saveSettings.SaveData(UserCredential.getString("user_id"), UserCredential.getString("username"), UserCredential.getString("email"), UserCredential.getString("password"), UserCredential.getString("picture_path"));
                     finish(); //close this activity
                 }
             } catch (Exception ex) {

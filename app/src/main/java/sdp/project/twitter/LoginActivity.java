@@ -1,7 +1,6 @@
 package sdp.project.twitter;
 
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.VisibleForTesting;
 import android.support.v7.app.AppCompatActivity;
@@ -25,8 +24,6 @@ import java.net.URL;
 
 
 import sdp.project.tweeter.R;
-
-import static android.Manifest.permission.READ_CONTACTS;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -137,7 +134,7 @@ public class LoginActivity extends AppCompatActivity {
                     //Toast.makeText(getApplicationContext(),UserCredential.getString("user_id"),Toast.LENGTH_LONG).show();
                     hideProgressDialog();
                     SaveSettings saveSettings = new SaveSettings(getApplicationContext());
-                    saveSettings.SaveData(UserCredential.getString("user_id"));
+                    saveSettings.SaveData(UserCredential.getString("user_id"), UserCredential.getString("username"), UserCredential.getString("email"), UserCredential.getString("password"), UserCredential.getString("picture_path"));
                     Intent myIntent = new Intent(getApplicationContext(), MainActivity.class);
                     startActivity(myIntent);
                     finish(); //close this activity

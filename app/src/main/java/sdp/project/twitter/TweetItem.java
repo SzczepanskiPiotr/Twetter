@@ -9,6 +9,9 @@ public class TweetItem {
     public String username;
     public String picture_path;
 
+    public boolean isFavourite;
+    public String favouriteCount="";
+
     TweetItem(String tweet_id, String tweet_text, String tweet_picture,
               String tweet_date, String user_id, String username , String picture_path)
     {

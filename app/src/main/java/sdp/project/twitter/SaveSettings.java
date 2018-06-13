@@ -1,13 +1,10 @@
 package sdp.project.twitter;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 
 public class SaveSettings {
-
-    public static String UserID="";
 
     Context context;
     SharedPreferences sharedRef;
@@ -18,16 +15,19 @@ public class SaveSettings {
     }
 
 
-    void SaveData(String UserID){
-        this.UserID = UserID;
+    void SaveData(String UserID, String Username, String Email, String Password, String Picture_path){
         SharedPreferences.Editor editor = sharedRef.edit();
         editor.putString("UserID", UserID);
+        editor.putString("Username", Username);
+        editor.putString("Email", Email);
+        editor.putString("Password", Password);
+        editor.putString("Picture_path", Picture_path);
         editor.commit();
         LoadData();
     }
 
     void LoadData(){
-        UserID = sharedRef.getString("UserID", "0");
+        String UserID = sharedRef.getString("UserID", "0");
 
         if(UserID.equals("0")){
             Intent intent = new Intent(context, LoginActivity.class);
@@ -36,10 +36,11 @@ public class SaveSettings {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         }
-        //else User.getInstance(context);
+        else User.getInstance(context);
     }
 
     void ClearData(){
+        User.clearUserInstance();
         sharedRef.edit().clear().commit();
         LoadData();
     }
