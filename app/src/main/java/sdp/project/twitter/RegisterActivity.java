@@ -46,6 +46,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.apache.commons.validator.routines.EmailValidator;
+
 import sdp.project.tweeter.R;
 
 public class RegisterActivity extends AppCompatActivity {
@@ -59,6 +61,8 @@ public class RegisterActivity extends AppCompatActivity {
     private static final String TAG = "AnonymousAuth";
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,8 +140,11 @@ public class RegisterActivity extends AppCompatActivity {
                         if (etName.getText().toString().equals("") || etEmail.getText().toString().equals("") || etPassword.getText().toString().equals("")) {
                             hideProgressDialog();
                             Toast.makeText(getApplicationContext(), "One of the fields is empty!", Toast.LENGTH_SHORT).show();
-
-                        } else {
+                        }else if(!EmailValidator.getInstance().isValid(etEmail.getText().toString())){
+                            hideProgressDialog();
+                            Toast.makeText(getApplicationContext(), "Wrong email form!", Toast.LENGTH_SHORT).show();
+                        }
+                        else {
                             String url = "https://pszczepanski.000webhostapp.com/Register.php?username=" + name + "&email=" + etEmail.getText().toString() + "&password=" + etPassword.getText().toString() + "&picture_path=" + downloadUrl;
                             new MyAsyncTaskGetNews().execute(url);
                         }
@@ -288,19 +295,19 @@ public class RegisterActivity extends AppCompatActivity {
                 //display response data
                 if (json.getString("msg")==null)
                     return;
-                if (json.getString("msg").equalsIgnoreCase("fail")) {
+                else if (json.getString("msg").equalsIgnoreCase("fail")) {
                     hideProgressDialog();
                     Toast.makeText(getApplicationContext(),"Cannot create this account",Toast.LENGTH_LONG).show();
                     return;
                 }
-                if (json.getString("msg").equalsIgnoreCase("user is added")) {
+                else if (json.getString("msg").equalsIgnoreCase("user is added")) {
                     Toast.makeText(getApplicationContext(), json.getString("msg"), Toast.LENGTH_LONG).show();
                     String name="";
                     name = java.net.URLEncoder.encode( etName.getText().toString() , "UTF-8");
                     String url="https://pszczepanski.000webhostapp.com/Login.php?username="+name+"&password="+etPassword.getText().toString() ;
                     new MyAsyncTaskGetNews().execute(url);
                 }
-                if (json.getString("msg").equalsIgnoreCase("Pass Login")) {
+                else if (json.getString("msg").equalsIgnoreCase("Pass Login")) {
                     JSONArray UserInfo = new JSONArray( json.getString("info"));
                     JSONObject UserCredential = UserInfo.getJSONObject(0);
                     //Toast.makeText(getApplicationContext(),UserCredential.getString("user_id"),Toast.LENGTH_LONG).show();

@@ -2,7 +2,6 @@
 
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
@@ -10,9 +9,9 @@
     android:gravity="center"
     android:background="#ffffff"
     android:layoutDirection="rtl"
-    android:textAlignment="center"
+    android:textAlignment="center">
     android:focusable="false"
-    android:focusableInTouchMode="false">
+    android:focusableInTouchMode="false"
 
     <LinearLayout
         android:layout_weight="1"
@@ -48,7 +47,8 @@
             android:textColorHint="#ffff"
             android:inputType="textMultiLine"
             android:paddingLeft="10dp"
-            android:textColor="#ffffff"/>
+            android:textColor="#ffffff"
+            android:focusable="true"/>
 
         <LinearLayout
             android:paddingLeft="10dp"

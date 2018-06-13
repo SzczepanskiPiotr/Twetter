@@ -124,11 +124,11 @@ public class LoginActivity extends AppCompatActivity {
                 //display response data
                 if (json.getString("msg")==null)
                     return;
-                if (json.getString("msg").equalsIgnoreCase(" Cannot Login")) {
+                else if (json.getString("msg").equalsIgnoreCase(" Cannot Login")) {
                     hideProgressDialog();
                     Toast.makeText(getApplicationContext(),"Wrong username/password. Try again.",Toast.LENGTH_LONG).show();
                 }
-                if (json.getString("msg").equalsIgnoreCase("Pass Login")) {
+                else if (json.getString("msg").equalsIgnoreCase("Pass Login")) {
                     JSONArray UserInfo = new JSONArray( json.getString("info"));
                     JSONObject UserCredential = UserInfo.getJSONObject(0);
                     //Toast.makeText(getApplicationContext(),UserCredential.getString("user_id"),Toast.LENGTH_LONG).show();

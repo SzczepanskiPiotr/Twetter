@@ -9,16 +9,13 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
+import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.support.annotation.RequiresApi;
 import android.support.annotation.VisibleForTesting;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -120,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
         //tweetWall
         myTweetWall = new TweetWall(this,tweetWall);
         ListView lsNews = findViewById(R.id.LVNews);
+        lsNews.setItemsCanFocus(true);
         lsNews.setAdapter(myTweetWall);//intisal with data
         LoadTweets(0,SearchType.MyFollowing);
 
@@ -224,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
             buFollow.setText("Follow");
         }
         String url = "https://pszczepanski.000webhostapp.com/UserFollowing.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&following_user_id=" + SelectedUserID + "&op=" + Operation;
-        new  MyAsyncTaskgetNews().execute(url);
+        new MyAsyncTaskGetNews().execute(url);
     }
 
     ImageView iv_temp;
@@ -238,7 +236,6 @@ public class MainActivity extends AppCompatActivity {
     String loadImagePath = "";
 
     int id;
-
 
     private class TweetWall extends BaseAdapter {
 
@@ -340,14 +337,14 @@ public class MainActivity extends AppCompatActivity {
                                             hideProgressDialog();
                                             Toast.makeText(context,"Tweet added",Toast.LENGTH_SHORT).show();
                                             String url = "https://pszczepanski.000webhostapp.com/TweetAdd.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&tweet_text=" + tweets + "&tweet_picture=" + downloadUrl;
-                                            new MyAsyncTaskgetNews().execute(url);
+                                            new MyAsyncTaskGetNews().execute(url);
                                         }
                                     });
                                 }
                             });
                             }else {
                                 String url = "https://pszczepanski.000webhostapp.com/TweetAdd.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&tweet_text=" + tweets + "&tweet_picture=" + downloadUrl;
-                                new MyAsyncTaskgetNews().execute(url);
+                                new MyAsyncTaskGetNews().execute(url);
                             }
                             //etPost.setText("");
                         }
@@ -399,7 +396,7 @@ public class MainActivity extends AppCompatActivity {
                             txtnamefollowers.setText(t.username);
                             Picasso.get().load(t.picture_path).into(iv_channel_icon);
                             String url = "https://pszczepanski.000webhostapp.com/IsFollowing.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&following_user_id=" + SelectedUserID;
-                            new MyAsyncTaskgetNews().execute(url);
+                            new MyAsyncTaskGetNews().execute(url);
                         }
                     }
                 });
@@ -431,7 +428,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         String url = "https://pszczepanski.000webhostapp.com/Favourite.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&tweet_id=" + t.tweet_id + "&op=" + Operation;
                         Log.i("URL",""+url);
-                        new  MyAsyncTaskgetNews().execute(url);
+                        new MyAsyncTaskGetNews().execute(url);
                     }
                 });
 
@@ -504,7 +501,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // get news from server
-        public class MyAsyncTaskgetNews extends AsyncTask<String, String, String> {
+        public class MyAsyncTaskGetNews extends AsyncTask<String, String, String> {
             @Override
             protected void onPreExecute() {
                 //before works
@@ -539,7 +536,6 @@ public class MainActivity extends AppCompatActivity {
                 return null;
             }
 
-            @RequiresApi(api = Build.VERSION_CODES.N)
             protected void onProgressUpdate(String... progress) {
                 try {
                     JSONObject json = new JSONObject(progress[0]);
@@ -574,7 +570,7 @@ public class MainActivity extends AppCompatActivity {
 
                             //id = Integer.parseInt(js.getString("tweet_id"));
                             String url = "https://pszczepanski.000webhostapp.com/IsFavourite.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&tweet_id=" + js.getString("tweet_id");
-                            new MyAsyncTaskgetNews().execute(url);
+                            new MyAsyncTaskGetNews().execute(url);
                         }
 
                         myTweetWall.notifyDataSetChanged();
@@ -639,8 +635,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-
-        @RequiresApi(api = Build.VERSION_CODES.N)
         public static TweetItem findTweetByID(Collection<TweetItem> tweetWall, String tweetID) {
         return tweetWall.stream().filter(tweet_ID -> tweetID.equals(tweet_ID.tweet_id)).findFirst().orElse(null);
     }
@@ -663,7 +657,7 @@ public class MainActivity extends AppCompatActivity {
             if (TweetType == SearchType.OnePerson)
                 url = "https://pszczepanski.000webhostapp.com/TweetList.php?user_id=" + SelectedUserID + "&StartFrom=" + StartFrom + "&op=" + TweetType;
 
-            new MyAsyncTaskgetNews().execute(url);
+            new MyAsyncTaskGetNews().execute(url);
 
             if (TweetType == SearchType.OnePerson)
                 ChannelInfo.setVisibility(View.VISIBLE);
