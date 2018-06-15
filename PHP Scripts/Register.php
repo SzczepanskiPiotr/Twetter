@@ -2,7 +2,8 @@
  // 1- connect to db
 require("DBInfo.php");
  // define quesry 
-$query="insert into users(username,email,password,picture_path) values ('" . $_GET['username']. "','"  . $_GET['email'] . "','"  . $_GET['password'] . "','"  . $_GET['picture_path'] . "')";  // $usename=$_GET['username'];
+$hashedPassword = password_hash($_GET['password'], PASSWORD_DEFAULT);
+$query="insert into users(username,email,password,picture_path) values ('" . $_GET['username']. "','"  . $_GET['email'] . "','"  .$hashedPassword . "','"  . $_GET['picture_path'] . "')";  // $usename=$_GET['username'];
 $result=  mysqli_query($connect, $query);
 if(! $result)
 {$output ="{'msg':'fail'}";
