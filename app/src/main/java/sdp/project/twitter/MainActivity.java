@@ -11,9 +11,12 @@ import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.annotation.VisibleForTesting;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -60,6 +63,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 import sdp.project.tweeter.R;
 
@@ -602,15 +608,18 @@ public class MainActivity extends AppCompatActivity {
                     } else if (json.getString("msg").equalsIgnoreCase("is favourite")){
                         JSONArray UserInfo = new JSONArray( json.getString("info"));
                         JSONObject UserCredential = UserInfo.getJSONObject(0);
-                        findTweetByID(tweetWall,UserCredential.getString("tweet_id")).isFavourite = true;
+                        findTweet(tweetWall,UserCredential.getString("tweet_id")).isFavourite = true;
+                        //findTweetByID(tweetWall,UserCredential.getString("tweet_id")).isFavourite = true;
                         JSONObject FavouriteCount = new JSONObject( json.getString("count"));
                         Log.i("count",FavouriteCount.getString("count(tweet_id)"));
-                        findTweetByID(tweetWall,UserCredential.getString("tweet_id")).favouriteCount  = FavouriteCount.getString("count(tweet_id)");
+                        findTweet(tweetWall,UserCredential.getString("tweet_id")).favouriteCount  = FavouriteCount.getString("count(tweet_id)");
+                        //findTweetByID(tweetWall,UserCredential.getString("tweet_id")).favouriteCount  = FavouriteCount.getString("count(tweet_id)");
                     } else if (json.getString("msg").equalsIgnoreCase("is not favourite")){
                         JSONObject FavouriteCount = new JSONObject( json.getString("count"));
                         if(!FavouriteCount.getString("tweet_id").equals("null")){
                             Log.i("count",FavouriteCount.getString("tweet_id"));
-                            findTweetByID(tweetWall,FavouriteCount.getString("tweet_id")).favouriteCount  = FavouriteCount.getString("count(tweet_id)");
+                            findTweet(tweetWall,FavouriteCount.getString("tweet_id")).favouriteCount  = FavouriteCount.getString("count(tweet_id)");
+                            //findTweetByID(tweetWall,FavouriteCount.getString("tweet_id")).favouriteCount  = FavouriteCount.getString("count(tweet_id)");
                         }
                 }
 
@@ -635,9 +644,22 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        public static TweetItem findTweetByID(Collection<TweetItem> tweetWall, String tweetID) {
-        return tweetWall.stream().filter(tweet_ID -> tweetID.equals(tweet_ID.tweet_id)).findFirst().orElse(null);
-    }
+    public static TweetItem findTweet(Collection<TweetItem> a, String tweetID) {
+            if(android.os.Build.VERSION.SDK_INT > android.os.Build.VERSION_CODES.N)
+            {
+                return a.stream().filter(tweet_ID -> tweetID.equals(tweet_ID.tweet_id)).findFirst().orElse(null);
+            }
+            for(TweetItem t : a) {
+                if(t.tweet_id != null) {
+                    if (t.tweet_id.equals(tweetID)) {
+                        Log.i("T", t.tweet_id);
+                        return t;
+                    }
+                }
+            }
+            return null;
+        }
+
         void LoadTweets(int StartFrom, int TweetType) {
             this.StartFrom = StartFrom;
             this.TweetsType = TweetType;
