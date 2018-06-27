@@ -302,12 +302,13 @@ public class RegisterActivity extends AppCompatActivity {
                 }
                 else if (json.getString("msg").equalsIgnoreCase("user is added")) {
                     Toast.makeText(getApplicationContext(), json.getString("msg"), Toast.LENGTH_LONG).show();
-                    String name="";
-                    name = java.net.URLEncoder.encode( etName.getText().toString() , "UTF-8");
-                    String url="https://pszczepanski.000webhostapp.com/Login.php?username="+name+"&password="+etPassword.getText().toString() ;
-                    new MyAsyncTaskGetNews().execute(url);
+                    finish();
+                    //String name="";
+                    //name = java.net.URLEncoder.encode( etName.getText().toString() , "UTF-8");
+                    //String url="https://pszczepanski.000webhostapp.com/Login.php?username="+name+"&password="+etPassword.getText().toString() ;
+                    //new MyAsyncTaskGetNews().execute(url);
                 }
-                else if (json.getString("msg").equalsIgnoreCase("Pass Login")) {
+                /*else if (json.getString("msg").equalsIgnoreCase("Pass Login")) {
                     JSONArray UserInfo = new JSONArray( json.getString("info"));
                     JSONObject UserCredential = UserInfo.getJSONObject(0);
                     //Toast.makeText(getApplicationContext(),UserCredential.getString("user_id"),Toast.LENGTH_LONG).show();
@@ -315,7 +316,7 @@ public class RegisterActivity extends AppCompatActivity {
                     SaveSettings saveSettings = new SaveSettings(getApplicationContext());
                     saveSettings.SaveData(UserCredential.getString("user_id"), UserCredential.getString("username"), UserCredential.getString("email"), UserCredential.getString("password"), UserCredential.getString("picture_path"));
                     finish(); //close this activity
-                }
+                }*/
             } catch (Exception ex) {
                 Log.d("er",  ex.getMessage());
             }

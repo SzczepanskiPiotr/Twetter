@@ -7,7 +7,7 @@ import android.util.Log;
 public class User {
 
     private SharedPreferences sharedRef;
-    private volatile static User userInstance;
+    private volatile static User userInstance = null;
     private String UserID;
     private String Username;
     private String Email;

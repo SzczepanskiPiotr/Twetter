@@ -2,8 +2,10 @@ package sdp.project.twitter;
 
 import android.app.ProgressDialog;
 import android.app.SearchManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -11,13 +13,11 @@ import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
 import android.support.annotation.VisibleForTesting;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -63,9 +63,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Predicate;
 
 import sdp.project.tweeter.R;
 
@@ -87,7 +84,6 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "AnonymousAuth";
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,17 +115,18 @@ public class MainActivity extends AppCompatActivity {
         buFollow = findViewById(R.id.buFollow);
         //load user
         saveSettings = new SaveSettings(getApplicationContext());
-        saveSettings.LoadData();
+        if(!saveSettings.LoadData()){
+            finish();
+            return;
+        }
+        //Log.i("UserID", User.getInstance(getApplicationContext()).getUserID());
         //tweetWall
         myTweetWall = new TweetWall(this,tweetWall);
         ListView lsNews = findViewById(R.id.LVNews);
         lsNews.setItemsCanFocus(true);
         lsNews.setAdapter(myTweetWall);//intisal with data
         LoadTweets(0,SearchType.MyFollowing);
-
-        Log.i("UserID", User.getInstance(getApplicationContext()).getUserID());
     }
-
 
     @Override
     public void onStart() {
@@ -145,6 +142,11 @@ public class MainActivity extends AppCompatActivity {
             mAuth.removeAuthStateListener(mAuthListener);
         }
         hideProgressDialog();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 
     private void signInAnonymously() {
@@ -221,9 +223,11 @@ public class MainActivity extends AppCompatActivity {
         String Follow = buFollow.getText().toString();
         if (Follow.equalsIgnoreCase("Follow")) {
             Operation = 1;
+            buFollow.setSelected(true);
             buFollow.setText("Un Follow");
             //buFollow.set
         } else {
+            buFollow.setSelected(false);
             Operation = 2;
             buFollow.setText("Follow");
         }
@@ -537,8 +541,7 @@ public class MainActivity extends AppCompatActivity {
                         urlConnection.disconnect();
                     }
 
-                } catch (Exception ex) {
-                }
+                } catch (Exception ex) { }
                 return null;
             }
 
@@ -596,7 +599,7 @@ public class MainActivity extends AppCompatActivity {
                                 "notweet", null, null, null));
                     } else if (json.getString("msg").equalsIgnoreCase("is subscriber")) {
                         buFollow.setText("Un Follow");
-                        buFollow.setPressed(true);
+                        buFollow.setSelected(true);
                     } else if (json.getString("msg").equalsIgnoreCase("is not subscriber")) {
                         buFollow.setText("Follow");
                     } else if (json.getString("msg").equalsIgnoreCase("favourite is updated")){

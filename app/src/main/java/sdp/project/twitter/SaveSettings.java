@@ -23,10 +23,11 @@ public class SaveSettings {
         editor.putString("Password", Password);
         editor.putString("Picture_path", Picture_path);
         editor.commit();
-        LoadData();
+        //LoadData();
     }
 
-    void LoadData(){
+    boolean LoadData(){
+
         String UserID = sharedRef.getString("UserID", "0");
 
         if(UserID.equals("0")){
@@ -35,8 +36,13 @@ public class SaveSettings {
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
+            return false;
         }
-        else User.getInstance(context);
+        else {
+            User.getInstance(context);
+            return true;
+        }
+
     }
 
     void ClearData(){

@@ -124,9 +124,14 @@ public class LoginActivity extends AppCompatActivity {
                 //display response data
                 if (json.getString("msg")==null)
                     return;
-                else if (json.getString("msg").equalsIgnoreCase(" Cannot Login")) {
+                else if (json.getString("msg").equalsIgnoreCase(" cannot login")) {
                     hideProgressDialog();
-                    Toast.makeText(getApplicationContext(),"Wrong username/password. Try again.",Toast.LENGTH_LONG).show();
+                    Toast.makeText(getApplicationContext(),"Wrong username, try again.",Toast.LENGTH_LONG).show();
+                }
+                else if (json.getString("msg").equalsIgnoreCase("invalid password")) {
+                    hideProgressDialog();
+                    Toast.makeText(getApplicationContext(),"Wrong password, try again.",Toast.LENGTH_LONG).show();
+                    return;
                 }
                 else if (json.getString("msg").equalsIgnoreCase("Pass Login")) {
                     JSONArray UserInfo = new JSONArray( json.getString("info"));
