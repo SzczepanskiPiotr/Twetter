@@ -633,7 +633,6 @@ public class MainActivity extends AppCompatActivity {
                     tweetWall.add(new TweetItem(null, null, null,
                             "add", null, null, null));
                 }
-
                 myTweetWall.notifyDataSetChanged();
 
             }
