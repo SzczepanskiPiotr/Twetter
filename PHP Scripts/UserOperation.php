@@ -4,6 +4,7 @@ class UserOperation
 {
     private $con;
 	
+	//register
 	define('USER_CREATED', 101);
 	define('USER_EXIST', 102);
 	define('USER_CREATION_FAILED', 103);
@@ -50,8 +51,30 @@ class UserOperation
             return true;
         return false;
     }
- 
-    //Method to get user by email
+	
+	//Method to follow other user
+	function followUser($userId, $followUserId, $op)
+    {
+		if($op == 1)//adding new follow
+			$stmt = $this->con->prepare("INSERT INTO following(user_id,following_user_id) VALUES (?,?)");
+		else if($op == 2)//remove existing follow
+			$stmt = $this->con->prepare("DELETE FROM following WHERE user_id=? AND following_user_id=?"); 	
+        $stmt->bind_param("ii", $userId, $followUserId);
+        if($stmt->execute())
+			return true;
+		return false;
+    }
+	
+	//Method to check if user is following
+	function checkFollowing($userId, $followUserId){
+		$stmt = $this->con->prepare("SELECT * FROM following WHERE user_id=? AND following_user_id=?");
+		$stmt->bind_param("ii",$userId, $followUserId);
+        if($stmt->execute())
+			return true;
+		return false;
+	}
+	
+	//Method to get user by email
     function getUserByEmail($email)
     {
         $stmt = $this->con->prepare("SELECT id, name, email, gender FROM users WHERE email = ?");
@@ -67,7 +90,7 @@ class UserOperation
         return $user;
     }
 	
-	    //Method to get user by email
+	//Method to get user by email
     function getUserByUsername($username)
     {
         $stmt = $this->con->prepare("SELECT id, name, email, gender FROM users WHERE username = ?");
@@ -108,18 +131,5 @@ class UserOperation
         $stmt->execute();
         $stmt->store_result();
         return $stmt->num_rows > 0;
-    }
-	
-	//Method to follow other user
-	function followUser($userId, $followUserId, $op)
-    {
-		if($op == 1)
-			$stmt = $this->con->prepare("INSERT INTO following(user_id,following_user_id) VALUES (?,?)");
-		else if($op == 2)
-			$stmt = $this->con->prepare("DELETE FROM following WHERE user_id=? AND following_user_id=?"); 	
-        $stmt->bind_param("ii", $userId, $followUserId);
-        if($stmt->execute())
-			return true;
-		return false;
     }
 }

@@ -105,7 +105,7 @@ $app->post('/update/{id}', function (Request $request, Response $response) {
     }
 });
 
-//sending message to user
+//following other user
 $app->post('/followuser', function (Request $request, Response $response) {
     if (isTheseParametersAvailable(array('userId', 'followUserId', 'op'))) {
         $requestData = $request->getParsedBody();
@@ -129,9 +129,32 @@ $app->post('/followuser', function (Request $request, Response $response) {
     }
 });
 
+//checking following between users
+$app->get('/checkfollowing', function (Request $request, Response $response) {
+    if (isTheseParametersAvailable(array('userId', 'followUserId'))) {
+        $requestData = $request->getParsedBody();
+        $userId = $requestData['userId'];
+        $followUserId = $requestData['followUserId'];
+
+        $db = new DbOperation();
+
+        $responseData = array();
+
+        if ($db->checkFollowing($userId, $followUserId)) {
+            $responseData['error'] = false;
+            $responseData['message'] = 'User is a subscriber.';
+        } else {
+            $responseData['error'] = true;
+            $responseData['message'] = 'User is not a subscriber.';
+        }
+
+        $response->getBody()->write(json_encode($responseData));
+    }
+});
+
 //---TweetOperation.php---//
 
-//registering a new user
+//add new tweet
 $app->post('/tweetadd', function (Request $request, Response $response) {
     if (isTheseParametersAvailable(array('user_id', 'tweet_text', 'tweet_picture'))) {
         $requestData = $request->getParsedBody();
@@ -152,6 +175,57 @@ $app->post('/tweetadd', function (Request $request, Response $response) {
         $response->getBody()->write(json_encode($responseData));
     }
 });
+
+//find specific tweets (following/user/tweetText)
+$app->post('/tweetList', function (Request $request, Response $response) {
+    if (isTheseParametersAvailable(array('user_id', 'startFrom', 'query', 'op'))) {
+        $requestData = $request->getParsedBody();
+        $user_id = $requestData['user_id'];
+        $startFrom = $requestData['startFrom'];
+        $query = $requestData['query'];
+	    $op = $requestData['op'];	
+		
+        $db = new DbOperation();
+		
+        $responseData = array();
+
+        if ($db->tweetList($user_id, $startFrom, $query, $op)) {
+            $responseData['error'] = false;
+            $responseData['message'] = 'Has tweets.';		
+            $responseData['tweets'] = $db->tweetList($user_id, $startFrom, $query, $op);
+		} else {
+			$responseData['error'] = true;
+            $responseData['message'] = 'No tweet.';
+		}
+        $response->getBody()->write(json_encode($responseData));
+    }
+});
+
+//favourite tweet
+$app->post('/favourite', function (Request $request, Response $response) {
+    if (isTheseParametersAvailable(array('user_id', 'tweet_id', 'op'))) {
+        $requestData = $request->getParsedBody();
+        $user_id = $requestData['user_id'];
+        $tweet_id = $requestData['tweet_id'];
+	    $op = $requestData['op'];	
+		
+        $db = new DbOperation();
+		
+        $responseData = array();
+
+        if ($db->favourite($user_id, $tweetId, $op)) {
+            $responseData['error'] = false;
+            $responseData['message'] = 'Favourite is updated.';		
+            $responseData['count'] = $db->countFavourites($tweet_id);
+		} else {
+			$responseData['error'] = true;
+            $responseData['message'] = 'Favourite could not be updated.';
+		}
+
+        $response->getBody()->write(json_encode($responseData));
+    }
+});
+
 
 //function to check parameters
 function isTheseParametersAvailable($required_fields)
@@ -176,6 +250,5 @@ function isTheseParametersAvailable($required_fields)
     }
     return true;
 }
-
 
 $app->run();
