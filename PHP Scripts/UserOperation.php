@@ -1,13 +1,8 @@
 <?php
  
 class UserOperation
-{
+{	
     private $con;
-	
-	//register
-	define('USER_CREATED', 101);
-	define('USER_EXIST', 102);
-	define('USER_CREATION_FAILED', 103);
  
     function __construct()
     {
@@ -19,7 +14,7 @@ class UserOperation
     //Method to create a new user
     function registerUser($name, $email, $pass, $picture_path)
     {
-        if (!$this->isUserExist($email)) {
+        if ($this->isUserExist($email)) {
             $password = md5($pass);
             $stmt = $this->con->prepare("INSERT INTO users (username, email, password, picture_path) VALUES (?, ?, ?, ?)");
             $stmt->bind_param("ssss", $name, $email, $password, $picture_path);
@@ -34,7 +29,7 @@ class UserOperation
     function userLogin($username, $pass)
     {
         $password = md5($pass);
-        $stmt = $this->con->prepare("SELECT id FROM users WHERE username = ? AND password = ?");
+        $stmt = $this->con->prepare("SELECT user_id FROM users WHERE username = ? AND password = ?");
         $stmt->bind_param("ss", $username, $password);
         $stmt->execute();
         $stmt->store_result();
@@ -45,7 +40,7 @@ class UserOperation
     function updateProfile($id, $name, $email, $pass, $picture_path)
     {
         $password = md5($pass);
-        $stmt = $this->con->prepare("UPDATE users SET name = ?, email = ?, password = ?, picture_path = ? WHERE id = ?");
+        $stmt = $this->con->prepare("UPDATE users SET name = ?, email = ?, password = ?, picture_path = ? WHERE user_id = ?");
         $stmt->bind_param("ssssi", $name, $email, $password, $picture_path, $id);
         if ($stmt->execute())
             return true;
@@ -77,14 +72,14 @@ class UserOperation
 	//Method to get user by email
     function getUserByEmail($email)
     {
-        $stmt = $this->con->prepare("SELECT id, name, email, gender FROM users WHERE email = ?");
+        $stmt = $this->con->prepare("SELECT user_id, username, email, picture_path FROM users WHERE email = ?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
-        $stmt->bind_result($id, $name, $email, $gender);
+        $stmt->bind_result($user_id, $username, $email, $picture_path);
         $stmt->fetch();
         $user = array();
-        $user['id'] = $id;
-        $user['name'] = $name;
+        $user['user_id'] = $user_id;
+        $user['username'] = $username;
         $user['email'] = $email;
         $user['picture_path'] = $picture_path;
         return $user;
@@ -93,14 +88,14 @@ class UserOperation
 	//Method to get user by email
     function getUserByUsername($username)
     {
-        $stmt = $this->con->prepare("SELECT id, name, email, gender FROM users WHERE username = ?");
+        $stmt = $this->con->prepare("SELECT user_id, username, email, picture_path FROM users WHERE username = ?");
         $stmt->bind_param("s", $username);
         $stmt->execute();
-        $stmt->bind_result($id, $name, $email, $picture_path);
+        $stmt->bind_result($user_id, $username, $email, $picture_path);
         $stmt->fetch();
         $user = array();
-        $user['id'] = $id;
-        $user['name'] = $name;
+        $user['user_id'] = $user_id;
+        $user['username'] = $username;
         $user['email'] = $email;
         $user['picture_path'] = $picture_path;
         return $user;
@@ -108,14 +103,14 @@ class UserOperation
  
     //Method to get all users
     function getAllUsers(){
-        $stmt = $this->con->prepare("SELECT id, name, email, picture_path FROM users");
+        $stmt = $this->con->prepare("SELECT user_id, username, email, picture_path FROM users");
         $stmt->execute();
-        $stmt->bind_result($id, $name, $email, $picture_path);
+        $stmt->bind_result($user_id, $username, $email, $picture_path);
         $users = array();
         while($stmt->fetch()){
             $temp = array();
-            $temp['id'] = $id;
-            $temp['name'] = $name;
+            $temp['user_id'] = $user_id;
+            $temp['username'] = $username;
             $temp['email'] = $email;
             $temp['picture_path'] = $picture_path;
             array_push($users, $temp);
@@ -126,7 +121,7 @@ class UserOperation
     //Method to check if email already exist
     function isUserExist($email)
     {
-        $stmt = $this->con->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt = $this->con->prepare("SELECT user_id FROM users WHERE email =?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $stmt->store_result();

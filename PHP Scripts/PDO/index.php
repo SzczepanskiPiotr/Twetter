@@ -6,6 +6,9 @@ use \Psr\Http\Message\ResponseInterface as Response;
 require '../vendor/autoload.php';
 require_once '../includes/UserOperation.php';
 require_once '../includes/TweetOperation.php';
+//require_once '../includes/DbConnect.php';
+
+
 
 $app = new \Slim\App([
     'settings' => [
@@ -23,6 +26,7 @@ $app->post('/register', function (Request $request, Response $response) {
         $email = $requestData['email'];
         $password = $requestData['password'];
         $picture_path = $requestData['picture_path'];
+		
         $db = new UserOperation();
         $responseData = array();
 
@@ -66,14 +70,15 @@ $app->post('/login', function (Request $request, Response $response) {
         $response->getBody()->write(json_encode($responseData));
     }
 });
-
+/*
 //getting all users
 $app->get('/users', function (Request $request, Response $response) {
     $db = new UserOperation();
     $users = $db->getAllUsers();
     $response->getBody()->write(json_encode(array("users" => $users)));
 });
-
+*/
+/*
 //updating a user
 $app->post('/update/{id}', function (Request $request, Response $response) {
     if (isTheseParametersAvailable(array('name', 'email', 'password', 'picture_path'))) {
@@ -103,6 +108,7 @@ $app->post('/update/{id}', function (Request $request, Response $response) {
         $response->getBody()->write(json_encode($responseData));
     }
 });
+*/
 
 //following other user
 $app->post('/followuser', function (Request $request, Response $response) {
@@ -129,7 +135,7 @@ $app->post('/followuser', function (Request $request, Response $response) {
 });
 
 //checking following between users
-$app->get('/checkfollowing', function (Request $request, Response $response) {
+$app->post('/checkfollowing', function (Request $request, Response $response) {
     if (isTheseParametersAvailable(array('userId', 'followUserId'))) {
         $requestData = $request->getParsedBody();
         $userId = $requestData['userId'];
@@ -176,7 +182,7 @@ $app->post('/tweetadd', function (Request $request, Response $response) {
 });
 
 //find specific tweets (following/user/tweetText)
-$app->post('/tweetList', function (Request $request, Response $response) {
+$app->post('/tweetlist', function (Request $request, Response $response) {
     if (isTheseParametersAvailable(array('user_id', 'startFrom', 'query', 'op'))) {
         $requestData = $request->getParsedBody();
         $user_id = $requestData['user_id'];
@@ -192,6 +198,7 @@ $app->post('/tweetList', function (Request $request, Response $response) {
             $responseData['error'] = false;
             $responseData['message'] = 'Has tweets.';		
             $responseData['tweets'] = $db->tweetList($user_id, $startFrom, $query, $op);
+			
 		} else {
 			$responseData['error'] = true;
             $responseData['message'] = 'No tweet.';
@@ -212,10 +219,9 @@ $app->post('/favourite', function (Request $request, Response $response) {
 		
         $responseData = array();
 
-        if ($db->favourite($user_id, $tweetId, $op)) {
+        if ($db->favourite($user_id, $tweet_id, $op)) {
             $responseData['error'] = false;
             $responseData['message'] = 'Favourite is updated.';		
-            $responseData['count'] = $db->countFavourites($tweet_id);
 		} else {
 			$responseData['error'] = true;
             $responseData['message'] = 'Favourite could not be updated.';
