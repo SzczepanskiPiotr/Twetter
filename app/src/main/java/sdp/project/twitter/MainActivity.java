@@ -61,6 +61,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
 import sdp.project.tweeter.R;
 
 public class MainActivity extends AppCompatActivity {
@@ -111,11 +117,11 @@ public class MainActivity extends AppCompatActivity {
         //button
         buFollow = findViewById(R.id.buFollow);
         //load user
-        saveSettings = new SaveSettings(getApplicationContext());
-        if(!saveSettings.LoadData()){
+        if(!SaveSettings.getInstance(getApplicationContext()).isLoggedIn()){
             finish();
-            return;
+            startActivity(new Intent(this, LoginActivity.class));
         }
+
         //Log.i("UserID", User.getInstance(getApplicationContext()).getUserID());
         //tweetWall
         myTweetWall = new TweetWall(this,tweetWall);

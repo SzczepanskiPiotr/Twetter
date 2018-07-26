@@ -4,39 +4,20 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
+import com.google.gson.annotations.SerializedName;
+
 public class User {
 
-    private SharedPreferences sharedRef;
-    private volatile static User userInstance = null;
     private String UserID;
     private String Username;
     private String Email;
-    private String Password;
     private String Picture_path;
 
-    private User(Context context) {
-        sharedRef = context.getSharedPreferences("myRef", Context.MODE_PRIVATE);
-        this.UserID = sharedRef.getString("UserID", "0");;
-        this.Username = sharedRef.getString("Username", "0");;
-        this.Email = sharedRef.getString("Email", "0");;
-        this.Password = sharedRef.getString("Password", "0");;
-        this.Picture_path = sharedRef.getString("Picture_path", "0");;
-    }
-
-    public static User getInstance(Context context) {
-        if (userInstance == null) {
-            synchronized (User.class) {
-                if (userInstance == null) {
-                    userInstance = new User(context);
-                    Log.i("LOL", "CREATED USER");
-                }
-            }
-        }
-        return userInstance;
-    }
-
-    public static void clearUserInstance(){
-        userInstance = null;
+    public User(String UserID, String Username, String Email, String Picture_path) {
+        this.UserID = UserID;
+        this.Username = Username;
+        this.Email = Email;
+        this.Picture_path = Picture_path;
     }
 
     public String getUserID() {
@@ -59,14 +40,6 @@ public class User {
         Email = email;
     }
 
-    public String getPassword() {
-        return Password;
-    }
-
-    public void setPassword(String password) {
-        Password = password;
-    }
-
     public String getPicture_path() {
         return Picture_path;
     }
@@ -74,5 +47,14 @@ public class User {
     public void setPicture_path(String picture_path) {
         Picture_path = picture_path;
     }
+
+    @SerializedName("error")
+    private Boolean error;
+
+    @SerializedName("message")
+    private String message;
+
+    @SerializedName("user")
+    private User user;
 
 }
