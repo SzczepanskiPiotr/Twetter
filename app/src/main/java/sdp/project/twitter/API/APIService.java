@@ -20,4 +20,18 @@ public interface APIService {
             @Field("password") String password,
             @Field("picture_path") String picture_path);
 
+    //The login call
+    @FormUrlEncoded
+    @POST("login")
+    Call<Result> loginUser(
+            @Field("username") String username,
+            @Field("password") String password);
+
+    //Follow other user call
+    @FormUrlEncoded
+    @POST("followuser")
+    Call<Result> followUser(
+            @Field("userId") int userId,
+            @Field("followUserId") int followUserId,
+            @Field("op") int op);
 }

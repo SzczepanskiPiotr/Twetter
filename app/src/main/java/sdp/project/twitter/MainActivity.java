@@ -68,6 +68,8 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 import sdp.project.tweeter.R;
+import sdp.project.twitter.API.APIService;
+import sdp.project.twitter.API.APIUrl;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -213,7 +215,7 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
             case R.id.logout: {
-                saveSettings.ClearData();
+                SaveSettings.getInstance(this.getApplicationContext()).logout();
                 return true;
             }
             default:
@@ -234,9 +236,34 @@ public class MainActivity extends AppCompatActivity {
             Operation = 2;
             buFollow.setText("Follow");
         }
-        String url = "https://pszczepanski.000webhostapp.com/UserFollowing.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&following_user_id=" + SelectedUserID + "&op=" + Operation;
-        new MyAsyncTaskGetNews().execute(url);
-    }
+        //building retrofit object
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(APIUrl.BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        //Defining retrofit api service
+        APIService service = retrofit.create(APIService.class);
+
+        //defining the call
+        Call<Result> call = service.followUser(SaveSettings.getInstance(this.getApplicationContext()).getUser().getUserID(),SelectedUserID,Operation);
+
+        //calling the api
+        call.enqueue(new Callback<Result>() {
+            @Override
+            public void onResponse(Call<Result> call, Response<Result> response) {
+                //hiding progress dialog
+                hideProgressDialog();
+                //displaying the message from the response as toast
+                Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onFailure(Call<Result> call, Throwable t) {
+                hideProgressDialog();
+                Toast.makeText(getApplicationContext(), t.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });    }
 
     ImageView iv_temp;
     TextView etCounter;
@@ -314,6 +341,7 @@ public class MainActivity extends AppCompatActivity {
                             tweets = "Error";
                         }
                         if(etPost.length()<=0) Toast.makeText(context,"Tweet is empty.",Toast.LENGTH_SHORT).show();
+                        //TODO: MERGE INTO ONE RETROFIT CALL
                         else if(etPost.length() <= 150) {
                             if(iv_temp.getVisibility()==View.VISIBLE){
                             showProgressDialog();
@@ -324,7 +352,7 @@ public class MainActivity extends AppCompatActivity {
                             Date dateobj = new Date();
                             // System.out.println(df.format(dateobj));
                             // Create a reference to "mountains.jpg"
-                            String myDownloadUrl = User.getInstance(getApplicationContext()).getUserID() + "_" + df.format(dateobj) + ".jpg";
+                            String myDownloadUrl = SaveSettings.getInstance(getApplicationContext()).getUser().getUserID() + "_" + df.format(dateobj) + ".jpg";
                             final StorageReference picRef = storageRef.child(myDownloadUrl);
                             iv_temp.setDrawingCacheEnabled(true);
                             iv_temp.buildDrawingCache();
@@ -355,7 +383,7 @@ public class MainActivity extends AppCompatActivity {
                                     });
                                 }
                             });
-                            }else {
+                            } else {
                                 String url = "https://pszczepanski.000webhostapp.com/TweetAdd.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&tweet_text=" + tweets + "&tweet_picture=" + downloadUrl;
                                 new MyAsyncTaskGetNews().execute(url);
                             }
@@ -637,7 +665,6 @@ public class MainActivity extends AppCompatActivity {
                             "add", null, null, null));
                 }
                 myTweetWall.notifyDataSetChanged();
-
             }
 
             protected void onPostExecute(String result2) {

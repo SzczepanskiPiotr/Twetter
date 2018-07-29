@@ -8,19 +8,19 @@ import com.google.gson.annotations.SerializedName;
 
 public class User {
 
-    private String UserID;
+    private int UserID;
     private String Username;
     private String Email;
     private String Picture_path;
 
-    public User(String UserID, String Username, String Email, String Picture_path) {
+    public User(int UserID, String Username, String Email, String Picture_path) {
         this.UserID = UserID;
         this.Username = Username;
         this.Email = Email;
         this.Picture_path = Picture_path;
     }
 
-    public String getUserID() {
+    public int getUserID() {
         return UserID;
     }
 

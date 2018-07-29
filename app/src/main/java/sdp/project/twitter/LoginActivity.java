@@ -23,7 +23,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 import sdp.project.tweeter.R;
+import sdp.project.twitter.API.APIService;
+import sdp.project.twitter.API.APIUrl;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -80,77 +87,39 @@ public class LoginActivity extends AppCompatActivity {
             Toast.makeText( getApplicationContext(),"One of the fields is empty!" , Toast.LENGTH_SHORT).show();
 
         }else{
-            String url="https://pszczepanski.000webhostapp.com/Login.php?username="+name+"&password="+etPassword.getText().toString() ;
-            new MyAsyncTaskGetNews().execute(url);
+                //building retrofit object
+                Retrofit retrofit = new Retrofit.Builder()
+                        .baseUrl(APIUrl.BASE_URL)
+                        .addConverterFactory(GsonConverterFactory.create())
+                        .build();
+
+                //Defining retrofit api service
+                APIService service = retrofit.create(APIService.class);
+
+                //defining the call
+                Call<Result> call = service.loginUser(name, etPassword.getText().toString());
+
+                //calling the api
+                call.enqueue(new Callback<Result>() {
+                    @Override
+                    public void onResponse(Call<Result> call, Response<Result> response) {
+                        //hiding progress dialog
+                        hideProgressDialog();
+                        if(!response.body().getError()){
+                            finish();
+                            SaveSettings.getInstance(getApplicationContext()).userLogin(response.body().getUser());
+                        }
+                        //displaying the message from the response as toast
+                        Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    public void onFailure(Call<Result> call, Throwable t) {
+                        hideProgressDialog();
+                        Toast.makeText(getApplicationContext(), t.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                });
         }
     }
-
-    public class MyAsyncTaskGetNews extends AsyncTask<String, String, String> {
-        @Override
-        protected void onPreExecute() {
-            //before works
-        }
-        @Override
-        protected String doInBackground(String... params) {
-            try {
-                String NewsData;
-                //define the url we have to connect with
-                URL url = new URL(params[0]);
-                //make connect with url and send request
-                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-                //waiting for 7000ms for response
-                urlConnection.setConnectTimeout(7000);//set timeout to 5 seconds
-
-                try {
-                    //getting the response data
-                    InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-                    //convert the stream to string
-                    Operations operations = new Operations(getApplicationContext());
-                    NewsData = operations.ConvertInputToStringNoChange(in);
-                    //send to display data
-                    publishProgress(NewsData);
-                } finally {
-                    //end connection
-                    urlConnection.disconnect();
-                }
-
-            }catch (Exception ex){}
-            return null;
-        }
-
-        protected void onProgressUpdate(String... progress) {
-            try {
-                JSONObject json= new JSONObject(progress[0]);
-                //display response data
-                if (json.getString("msg")==null)
-                    return;
-                else if (json.getString("msg").equalsIgnoreCase(" cannot login")) {
-                    hideProgressDialog();
-                    Toast.makeText(getApplicationContext(),"Wrong username, try again.",Toast.LENGTH_LONG).show();
-                }
-                else if (json.getString("msg").equalsIgnoreCase("invalid password")) {
-                    hideProgressDialog();
-                    Toast.makeText(getApplicationContext(),"Wrong password, try again.",Toast.LENGTH_LONG).show();
-                    return;
-                }
-                else if (json.getString("msg").equalsIgnoreCase("Pass Login")) {
-                    JSONArray UserInfo = new JSONArray( json.getString("info"));
-                    JSONObject UserCredential = UserInfo.getJSONObject(0);
-                    //Toast.makeText(getApplicationContext(),UserCredential.getString("user_id"),Toast.LENGTH_LONG).show();
-                    hideProgressDialog();
-                    SaveSettings saveSettings = new SaveSettings(getApplicationContext());
-                    saveSettings.SaveData(UserCredential.getString("user_id"), UserCredential.getString("username"), UserCredential.getString("email"), UserCredential.getString("password"), UserCredential.getString("picture_path"));
-                    Intent myIntent = new Intent(getApplicationContext(), MainActivity.class);
-                    startActivity(myIntent);
-                    finish(); //close this activity
-                }
-            } catch (Exception ex) {
-                Log.d("er",  ex.getMessage());
-            }
-        }
-
-        protected void onPostExecute(String  result2){ }
-    }
-
 }
 
