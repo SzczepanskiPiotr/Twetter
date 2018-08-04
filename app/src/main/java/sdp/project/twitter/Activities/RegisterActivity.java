@@ -1,4 +1,4 @@
-package sdp.project.twitter;
+package sdp.project.twitter.Activities;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -46,8 +46,9 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import sdp.project.tweeter.R;
-import sdp.project.twitter.API.APIService;
-import sdp.project.twitter.API.APIUrl;
+import sdp.project.twitter.API.*;
+import sdp.project.twitter.Result;
+import sdp.project.twitter.SaveSettings;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -161,6 +162,7 @@ public class RegisterActivity extends AppCompatActivity {
                                     hideProgressDialog();
                                     if(!response.body().getError()){
                                         finish();
+                                        Log.i("i",response.body().getUser().getUsername());
                                         SaveSettings.getInstance(getApplicationContext()).userLogin(response.body().getUser());
                                     }
                                     //displaying the message from the response as toast

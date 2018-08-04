@@ -61,7 +61,9 @@ $app->post('/login', function (Request $request, Response $response) {
 
         if ($db->userLogin($username, $password)) {
             $responseData['error'] = false;
-            $responseData['user'] = $db->getUserByUsername($username);
+			$responseData['message'] = 'Logging in';
+			$responseData['user'] = $db->getUserByUsername($username);
+
         } else {
             $responseData['error'] = true;
             $responseData['message'] = 'Invalid username or password';
@@ -112,10 +114,10 @@ $app->post('/update/{id}', function (Request $request, Response $response) {
 
 //following other user
 $app->post('/followuser', function (Request $request, Response $response) {
-    if (isTheseParametersAvailable(array('userId', 'followUserId', 'op'))) {
+    if (isTheseParametersAvailable(array('user_id', 'followUser_id', 'op'))) {
         $requestData = $request->getParsedBody();
-        $userId = $requestData['userId'];
-        $followUserId = $requestData['followUserId'];
+        $userId = $requestData['user_id'];
+        $followUserId = $requestData['followUser_id'];
         $op = $requestData['op'];
 
         $db = new UserOperation();
@@ -136,10 +138,10 @@ $app->post('/followuser', function (Request $request, Response $response) {
 
 //checking following between users
 $app->post('/checkfollowing', function (Request $request, Response $response) {
-    if (isTheseParametersAvailable(array('userId', 'followUserId'))) {
+    if (isTheseParametersAvailable(array('user_id', 'followUser_id'))) {
         $requestData = $request->getParsedBody();
-        $userId = $requestData['userId'];
-        $followUserId = $requestData['followUserId'];
+        $userId = $requestData['user_id'];
+        $followUserId = $requestData['followUser_id'];
 
         $db = new UserOperation();
 

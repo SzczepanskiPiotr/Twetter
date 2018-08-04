@@ -1,20 +1,30 @@
 package sdp.project.twitter;
 
-public class TweetItem {
+import com.google.gson.annotations.SerializedName;
 
-    public String tweet_id;
+public class TweetItem {
+    @SerializedName("tweet_id")
+    public int tweet_id;
+    @SerializedName("tweet_text")
     public String tweet_text;
+    @SerializedName("tweet_picture")
     public String tweet_picture;
+    @SerializedName("tweet_date")
     public String tweet_date;
-    public String user_id;
+    @SerializedName("user_id")
+    public int user_id;
+    @SerializedName("username")
     public String username;
+    @SerializedName("picture_path")
     public String picture_path;
-    public String favouriteCount;
+    @SerializedName("favoruiteCount")
+    public int favouriteCount;
+    @SerializedName("isFavourite")
     public boolean isFavourite;
 
-    TweetItem(String tweet_id, String tweet_text, String tweet_picture,
-              String tweet_date, String user_id, String username , String picture_path,
-              String favouriteCount, boolean isFavourite)
+    public TweetItem(int tweet_id, String tweet_text, String tweet_picture,
+              String tweet_date, int user_id, String username , String picture_path,
+              int favouriteCount, boolean isFavourite)
     {
         this.tweet_id = tweet_id;
         this.tweet_text = tweet_text;

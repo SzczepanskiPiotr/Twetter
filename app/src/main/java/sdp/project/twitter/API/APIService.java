@@ -7,7 +7,6 @@ import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.POST;
 import sdp.project.twitter.Result;
-import sdp.project.twitter.User;
 
 public interface APIService {
 
@@ -31,7 +30,41 @@ public interface APIService {
     @FormUrlEncoded
     @POST("followuser")
     Call<Result> followUser(
-            @Field("userId") int userId,
-            @Field("followUserId") int followUserId,
+            @Field("user_id") int userId,
+            @Field("followUser_id") int followUserId,
             @Field("op") int op);
+
+    //Add new tweet call
+    @FormUrlEncoded
+    @POST("checkfollowing")
+    Call<Result> checkFollowing(
+            @Field("user_id") int user_id,
+            @Field("followUser_id") int followUser_id);
+
+    //Add new tweet call
+    @FormUrlEncoded
+    @POST("tweetadd")
+    Call<Result> tweetAdd(
+            @Field("user_id") int user_id,
+            @Field("tweet_text") String tweet_text,
+            @Field("tweet_picture") String tweet_picture);
+
+    //Add new tweet call
+    @FormUrlEncoded
+    @POST("tweetlist")
+    Call<Result> tweetList(
+            @Field("user_id") int user_id,
+            @Field("startFrom") int startFrom,
+            @Field("query") String query,
+            @Field("op") int op);
+
+
+    //Add new tweet call
+    @FormUrlEncoded
+    @POST("favourite")
+    Call<Result> favourite(
+            @Field("user_id") int user_id,
+            @Field("tweet_id") int tweet_id,
+            @Field("op") int op);
+
 }

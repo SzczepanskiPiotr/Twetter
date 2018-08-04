@@ -3,6 +3,7 @@ package sdp.project.twitter;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.util.Log;
 
 public class SaveSettings {
 
@@ -11,16 +12,18 @@ public class SaveSettings {
 
     private static final String SHARED_PREF_NAME = "myRef";
 
-    private static final String SETTINGS_USERID = "";
-    private static final String SETTINGS_USERNAME = "";
-    private static final String SETTINGS_EMAIL = "";
-    private static final String SETTINGS_PICTUREPATH = "";
+    private static final String SETTINGS_USERID = "myRef_userId";
+    private static final String SETTINGS_USERNAME = "myRef_username";
+    private static final String SETTINGS_EMAIL = "myRef_email";
+    private static final String SETTINGS_PICTUREPATH = "myRef_picturepath";
 
     private SaveSettings(Context context){
         this.context = context;
     }
+
     public static synchronized SaveSettings getInstance(Context context) {
         if (settingsInstance == null) {
+            Log.i("SAVESETTINGS:", "CREATING NEW INSTANCE");
             settingsInstance = new SaveSettings(context);
         }
         return settingsInstance;
@@ -30,7 +33,7 @@ public class SaveSettings {
     public boolean userLogin(User user) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString(SETTINGS_USERID, user.getUserID());
+        editor.putString(SETTINGS_USERID, String.valueOf(user.getUserID()));
         editor.putString(SETTINGS_USERNAME, user.getUsername());
         editor.putString(SETTINGS_EMAIL, user.getEmail());
         editor.putString(SETTINGS_PICTUREPATH, user.getPicture_path());
@@ -62,4 +65,5 @@ public class SaveSettings {
         editor.apply();
         return true;
     }
+
 }

@@ -1,10 +1,9 @@
-package sdp.project.twitter;
+package sdp.project.twitter.Activities;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.support.annotation.VisibleForTesting;
 import android.support.v7.app.AppCompatActivity;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -13,14 +12,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.io.BufferedInputStream;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 
 import retrofit2.Call;
@@ -31,6 +23,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import sdp.project.tweeter.R;
 import sdp.project.twitter.API.APIService;
 import sdp.project.twitter.API.APIUrl;
+import sdp.project.twitter.Result;
+import sdp.project.twitter.SaveSettings;
+import sdp.project.twitter.User;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -105,12 +100,13 @@ public class LoginActivity extends AppCompatActivity {
                     public void onResponse(Call<Result> call, Response<Result> response) {
                         //hiding progress dialog
                         hideProgressDialog();
+                        Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
                         if(!response.body().getError()){
-                            finish();
                             SaveSettings.getInstance(getApplicationContext()).userLogin(response.body().getUser());
+                            finish();
+                            startActivity(new Intent(getApplicationContext(), MainActivity.class));
                         }
                         //displaying the message from the response as toast
-                        Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
                     }
 
                     @Override

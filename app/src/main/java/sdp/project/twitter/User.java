@@ -1,27 +1,27 @@
 package sdp.project.twitter;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.util.Log;
-
 import com.google.gson.annotations.SerializedName;
 
 public class User {
 
-    private int UserID;
+    @SerializedName("user_id")
+    private String UserID;
+    @SerializedName("username")
     private String Username;
+    @SerializedName("email")
     private String Email;
+    @SerializedName("picture_path")
     private String Picture_path;
 
-    public User(int UserID, String Username, String Email, String Picture_path) {
-        this.UserID = UserID;
-        this.Username = Username;
-        this.Email = Email;
-        this.Picture_path = Picture_path;
+    public User(String user_id, String username, String email, String picture_path) {
+        this.UserID = user_id;
+        this.Username = username;
+        this.Email = email;
+        this.Picture_path = picture_path;
     }
 
     public int getUserID() {
-        return UserID;
+        return Integer.parseInt(UserID);
     }
 
     public String getUsername() {
@@ -47,14 +47,5 @@ public class User {
     public void setPicture_path(String picture_path) {
         Picture_path = picture_path;
     }
-
-    @SerializedName("error")
-    private Boolean error;
-
-    @SerializedName("message")
-    private String message;
-
-    @SerializedName("user")
-    private User user;
 
 }
