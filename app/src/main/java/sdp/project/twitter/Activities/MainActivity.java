@@ -1,15 +1,14 @@
-package sdp.project.twitter;
+package sdp.project.twitter.Activities;
 
 import android.app.ProgressDialog;
 import android.app.SearchManager;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Path;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -17,7 +16,6 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -64,7 +62,21 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
 import sdp.project.tweeter.R;
+import sdp.project.twitter.API.APIService;
+import sdp.project.twitter.API.APIUrl;
+import sdp.project.twitter.Operations;
+import sdp.project.twitter.Result;
+import sdp.project.twitter.SaveSettings;
+import sdp.project.twitter.SearchType;
+import sdp.project.twitter.TweetItem;
+import sdp.project.twitter.User;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -105,7 +117,6 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-
         //Info of other users, hidden on main screen
         ChannelInfo = findViewById(R.id.ChannelInfo);
         ChannelInfo.setVisibility(View.GONE);
@@ -114,12 +125,12 @@ public class MainActivity extends AppCompatActivity {
         //button
         buFollow = findViewById(R.id.buFollow);
         //load user
-        saveSettings = new SaveSettings(getApplicationContext());
-        if(!saveSettings.LoadData()){
+        if(!SaveSettings.getInstance(getApplicationContext()).isLoggedIn()){
             finish();
+            startActivity(new Intent(getApplicationContext(), LoginActivity.class));
             return;
         }
-        //Log.i("UserID", User.getInstance(getApplicationContext()).getUserID());
+        Log.i("MAINACTIVITY: ","LOGGING IN USER");
         //tweetWall
         myTweetWall = new TweetWall(this,tweetWall);
         ListView lsNews = findViewById(R.id.LVNews);
@@ -163,7 +174,7 @@ public class MainActivity extends AppCompatActivity {
 
     SearchView searchView;
     Menu myMenu;
-    String Query;
+    String Query="null";
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -210,7 +221,9 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
             case R.id.logout: {
-                saveSettings.ClearData();
+                SaveSettings.getInstance(this.getApplicationContext()).logout();
+                finish();
+                startActivity(new Intent(getApplicationContext(), LoginActivity.class));
                 return true;
             }
             default:
@@ -231,15 +244,40 @@ public class MainActivity extends AppCompatActivity {
             Operation = 2;
             buFollow.setText("Follow");
         }
-        String url = "https://pszczepanski.000webhostapp.com/UserFollowing.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&following_user_id=" + SelectedUserID + "&op=" + Operation;
-        new MyAsyncTaskGetNews().execute(url);
-    }
+        //building retrofit object
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(APIUrl.BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        //Defining retrofit api service
+        APIService service = retrofit.create(APIService.class);
+
+        //defining the call
+        Call<Result> call = service.followUser(SaveSettings.getInstance(this.getApplicationContext()).getUser().getUserID(),SelectedUserID,Operation);
+
+        //calling the api
+        call.enqueue(new Callback<Result>() {
+            @Override
+            public void onResponse(Call<Result> call, Response<Result> response) {
+                //hiding progress dialog
+                hideProgressDialog();
+                //displaying the message from the response as toast
+                Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onFailure(Call<Result> call, Throwable t) {
+                hideProgressDialog();
+                Toast.makeText(getApplicationContext(), t.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });    }
 
     ImageView iv_temp;
     TextView etCounter;
     int counter;
     EditText etPost;
-    String downloadUrl = null;
+    String downloadUrl = "none";
     String tweets;
 
     Boolean loadedImage = false;
@@ -302,6 +340,7 @@ public class MainActivity extends AppCompatActivity {
                 iv_post.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
+                        //TODO: CHECK IF 'tweets' IS REQUIRED
                         try {
                             //for space with name
                             tweets = java.net.URLEncoder.encode(etPost.getText().toString(), "UTF-8");
@@ -311,6 +350,7 @@ public class MainActivity extends AppCompatActivity {
                             tweets = "Error";
                         }
                         if(etPost.length()<=0) Toast.makeText(context,"Tweet is empty.",Toast.LENGTH_SHORT).show();
+                        //TODO: MERGE INTO ONE RETROFIT CALL
                         else if(etPost.length() <= 150) {
                             if(iv_temp.getVisibility()==View.VISIBLE){
                             showProgressDialog();
@@ -321,7 +361,7 @@ public class MainActivity extends AppCompatActivity {
                             Date dateobj = new Date();
                             // System.out.println(df.format(dateobj));
                             // Create a reference to "mountains.jpg"
-                            String myDownloadUrl = User.getInstance(getApplicationContext()).getUserID() + "_" + df.format(dateobj) + ".jpg";
+                            String myDownloadUrl = SaveSettings.getInstance(getApplicationContext()).getUser().getUserID() + "_" + df.format(dateobj) + ".jpg";
                             final StorageReference picRef = storageRef.child(myDownloadUrl);
                             iv_temp.setDrawingCacheEnabled(true);
                             iv_temp.buildDrawingCache();
@@ -346,16 +386,74 @@ public class MainActivity extends AppCompatActivity {
                                             downloadUrl = downloadUri.toString();
                                             hideProgressDialog();
                                             Toast.makeText(context,"Tweet added",Toast.LENGTH_SHORT).show();
-                                            String url = "https://pszczepanski.000webhostapp.com/TweetAdd.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&tweet_text=" + tweets + "&tweet_picture=" + downloadUrl;
-                                            new MyAsyncTaskGetNews().execute(url);
+                                            //building retrofit object
+                                            Retrofit retrofit = new Retrofit.Builder()
+                                                    .baseUrl(APIUrl.BASE_URL)
+                                                    .addConverterFactory(GsonConverterFactory.create())
+                                                    .build();
+
+                                            //Defining retrofit api service
+                                            APIService service = retrofit.create(APIService.class);
+
+                                            //defining the call
+                                            Call<Result> call = service.tweetAdd(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), etPost.getText().toString(), downloadUrl);
+
+                                            //calling the api
+                                            call.enqueue(new Callback<Result>() {
+                                                @Override
+                                                public void onResponse(Call<Result> call, Response<Result> response) {
+                                                    //hiding progress dialog
+                                                    hideProgressDialog();
+                                                    //displaying the message from the response as toast
+                                                    Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
+                                                    etPost.setText("");
+                                                    LoadTweets(0,SearchType.MyFollowing);
+                                                }
+
+                                                @Override
+                                                public void onFailure(Call<Result> call, Throwable t) {
+                                                    hideProgressDialog();
+                                                    Toast.makeText(getApplicationContext(), t.getMessage(), Toast.LENGTH_LONG).show();
+                                                }
+                                            });
                                         }
                                     });
                                 }
                             });
-                            }else {
-                                String url = "https://pszczepanski.000webhostapp.com/TweetAdd.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&tweet_text=" + tweets + "&tweet_picture=" + downloadUrl;
-                                new MyAsyncTaskGetNews().execute(url);
+                            } else {
+                                //building retrofit object
+                                Retrofit retrofit = new Retrofit.Builder()
+                                        .baseUrl(APIUrl.BASE_URL)
+                                        .addConverterFactory(GsonConverterFactory.create())
+                                        .build();
+
+                                //Defining retrofit api service
+                                APIService service = retrofit.create(APIService.class);
+
+                                //defining the call
+                                Call<Result> call = service.tweetAdd(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), etPost.getText().toString(), downloadUrl);
+
+                                //calling the api
+                                call.enqueue(new Callback<Result>() {
+                                    @Override
+                                    public void onResponse(Call<Result> call, Response<Result> response) {
+                                        //hiding progress dialog
+                                        hideProgressDialog();
+                                        //displaying the message from the response as toast
+                                        Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
+                                        etPost.setText("");
+                                        LoadTweets(0,SearchType.MyFollowing);
+                                    }
+
+                                    @Override
+                                    public void onFailure(Call<Result> call, Throwable t) {
+                                        hideProgressDialog();
+                                        Toast.makeText(getApplicationContext(), t.getMessage(), Toast.LENGTH_LONG).show();
+                                    }
+                                });
                             }
+
+
                             //etPost.setText("");
                         }
                         else Toast.makeText(context,"Tweet is too long",Toast.LENGTH_SHORT).show();
@@ -400,13 +498,46 @@ public class MainActivity extends AppCompatActivity {
                 txtUserName.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        SelectedUserID = Integer.parseInt(t.user_id);
-                        if(Integer.parseInt(User.getInstance(getApplicationContext()).getUserID()) != SelectedUserID){
+                        SelectedUserID = t.user_id;
+                        if(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID() != SelectedUserID){
                             LoadTweets(0, SearchType.OnePerson);
                             txtnamefollowers.setText(t.username);
                             Picasso.get().load(t.picture_path).into(iv_channel_icon);
-                            String url = "https://pszczepanski.000webhostapp.com/IsFollowing.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&following_user_id=" + SelectedUserID;
-                            new MyAsyncTaskGetNews().execute(url);
+                            //TODO: I THINK FOLLOWING STATUS IS ALREADY IN 'tweetlist' REST CALL
+                            //building retrofit object
+                            Retrofit retrofit = new Retrofit.Builder()
+                                    .baseUrl(APIUrl.BASE_URL)
+                                    .addConverterFactory(GsonConverterFactory.create())
+                                    .build();
+
+                            //Defining retrofit api service
+                            APIService service = retrofit.create(APIService.class);
+
+                            //defining the call
+                            Call<Result> call = service.checkFollowing(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), SelectedUserID);
+
+                            //calling the api
+                            call.enqueue(new Callback<Result>() {
+                                @Override
+                                public void onResponse(Call<Result> call, Response<Result> response) {
+                                    //hiding progress dialog
+                                    hideProgressDialog();
+                                    if(response.body().getError()){
+                                        buFollow.setText("Follow");
+                                    }else{
+                                        buFollow.setText("Un Follow");
+                                        buFollow.setSelected(true);
+                                    }
+                                    //displaying the message from the response as toast
+                                    Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
+                                }
+
+                                @Override
+                                public void onFailure(Call<Result> call, Throwable t) {
+                                    hideProgressDialog();
+                                    Toast.makeText(getApplicationContext(), t.getMessage(), Toast.LENGTH_LONG).show();
+                                }
+                            });
                         }
                     }
                 });
@@ -422,11 +553,11 @@ public class MainActivity extends AppCompatActivity {
                 Picasso.get().load(t.picture_path).into(picture_path);
 
                 final ImageView iv_share = myView.findViewById(R.id.iv_share);
+                final TextView favouriteCount = myView.findViewById(R.id.txt_favouriteCount);
 
                 iv_share.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        id = tweetWall.indexOf(t);
                         int Operation;
                         if(iv_share.getBackground().getConstantState() == getResources().getDrawable(R.drawable.favourite).getConstantState()){
                             Operation = 1;
@@ -436,9 +567,43 @@ public class MainActivity extends AppCompatActivity {
                             iv_share.setBackgroundResource(R.drawable.favourite);
                             Operation = 2;
                         }
-                        String url = "https://pszczepanski.000webhostapp.com/Favourite.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&tweet_id=" + t.tweet_id + "&op=" + Operation;
-                        Log.i("URL",""+url);
-                        new MyAsyncTaskGetNews().execute(url);
+                        //Log.i("URL",""+url);
+                        //building retrofit object
+                        Retrofit retrofit = new Retrofit.Builder()
+                                .baseUrl(APIUrl.BASE_URL)
+                                .addConverterFactory(GsonConverterFactory.create())
+                                .build();
+
+                        //Defining retrofit api service
+                        APIService service = retrofit.create(APIService.class);
+
+                        //defining the call
+                        Call<Result> call = service.favourite(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), t.tweet_id, Operation);
+
+                        //calling the api
+                        call.enqueue(new Callback<Result>() {
+                            @Override
+                            public void onResponse(Call<Result> call, Response<Result> response) {
+                                //hiding progress dialog
+                                hideProgressDialog();
+                                if(!response.body().getError()){
+                                    t.isFavourite = !t.isFavourite;
+                                    if(t.isFavourite)
+                                        t.favouriteCount++;
+                                    else
+                                        t.favouriteCount--;
+                                }
+                                //displaying the message from the response as toast
+                                Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
+                                favouriteCount.setText(""+t.favouriteCount);
+                            }
+
+                            @Override
+                            public void onFailure(Call<Result> call, Throwable t) {
+                                hideProgressDialog();
+                                Toast.makeText(getApplicationContext(), t.getMessage(), Toast.LENGTH_LONG).show();
+                            }
+                        });
                     }
                 });
 
@@ -447,7 +612,6 @@ public class MainActivity extends AppCompatActivity {
                 else
                     iv_share.setBackgroundResource(R.drawable.favourited);
 
-                TextView favouriteCount = myView.findViewById(R.id.txt_favouriteCount);
                 favouriteCount.setText(""+t.favouriteCount);
 
                 return myView;
@@ -509,7 +673,7 @@ public class MainActivity extends AppCompatActivity {
                 loadImagePath = picturePath;
             }
         }
-
+/*
         // get news from server
         public class MyAsyncTaskGetNews extends AsyncTask<String, String, String> {
             @Override
@@ -633,9 +797,7 @@ public class MainActivity extends AppCompatActivity {
                     tweetWall.add(new TweetItem(null, null, null,
                             "add", null, null, null));
                 }
-
                 myTweetWall.notifyDataSetChanged();
-
             }
 
             protected void onPostExecute(String result2) {
@@ -662,27 +824,86 @@ public class MainActivity extends AppCompatActivity {
             }
             return null;
         }
+        */
 
         void LoadTweets(int StartFrom, int TweetType) {
+            Log.i("MAINACTIVITY: ", "LOADING TWEETS");
+            int user_id = SaveSettings.getInstance(getApplicationContext()).getUser().getUserID();
             this.StartFrom = StartFrom;
             this.TweetsType = TweetType;
             //display loading
             if (StartFrom == 0) // add loading at beggining
-                tweetWall.add(0, new TweetItem(null, null, null,
-                        "loading", null, null, null));
+                tweetWall.add(0, new TweetItem(0, null, null,
+                        "loading", 0, null, null, 0, false));
             else // add loading at end
-                tweetWall.add(new TweetItem(null, null, null,
-                        "loading", null, null, null));
+                tweetWall.add(new TweetItem(0, null, null,
+                        "loading", 0, null, null, 0, false));
 
             myTweetWall.notifyDataSetChanged();
 
-            String url = "https://pszczepanski.000webhostapp.com/TweetList.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&StartFrom=" + StartFrom + "&op=" + TweetType;
-            if (TweetType == SearchType.SearchIn)
-                url = "https://pszczepanski.000webhostapp.com/TweetList.php?user_id=" + User.getInstance(getApplicationContext()).getUserID() + "&StartFrom=" + StartFrom + "&op=" + TweetType + "&query=" + Query;
             if (TweetType == SearchType.OnePerson)
-                url = "https://pszczepanski.000webhostapp.com/TweetList.php?user_id=" + SelectedUserID + "&StartFrom=" + StartFrom + "&op=" + TweetType;
+                user_id = SelectedUserID;
 
-            new MyAsyncTaskGetNews().execute(url);
+            //building retrofit object
+            Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl(APIUrl.BASE_URL)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
+
+            //Defining retrofit api service
+            APIService service = retrofit.create(APIService.class);
+
+            //defining the call
+            Log.i("TEST: ", "USER ID: " + user_id + " STARTFROM: " + StartFrom + " QUERY: " + Query+ " TWEETTYPE: " + TweetType);
+            Call<Result> call = service.tweetList(user_id, StartFrom, Query, TweetType);
+
+            //calling the api
+            call.enqueue(new Callback<Result>() {
+                @Override
+                public void onResponse(Call<Result> call, Response<Result> response) {
+                    //hiding progress dialog
+                    hideProgressDialog();
+                    if(response.body().getError()){
+                        //remove we are loading now
+                        if (StartFrom == 0) {
+                            tweetWall.clear();
+                            tweetWall.add(new TweetItem(0, null, null,
+                                    "add", 0, null, null, 0, false));
+                        } else {
+                            //remove we are loading now
+                            tweetWall.remove(tweetWall.size() - 1);
+                        }
+                        // listnewsData.remove(listnewsData.size()-1);
+                        tweetWall.add(new TweetItem(0, null, null,
+                                "notweet", 0, null, null, 0, false));
+                    }else {
+                        if (StartFrom == 0) {
+                            tweetWall.clear();
+                            tweetWall.add(new TweetItem(0, null, null,
+                                    "add", 0, null, null,0,false));
+
+                        } else {
+                            //remove we are loading now
+                            tweetWall.remove(tweetWall.size() - 1);
+                        }
+
+                        for (int i = 0; i < response.body().getTweets().size(); i++) {
+                            // try to add the resourcess
+                            //add data and view it
+                            tweetWall.add(response.body().getTweets().get(i));
+                        }
+                    }
+                    myTweetWall.notifyDataSetChanged();
+                    //displaying the message from the response as toast
+                    Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
+                }
+
+                @Override
+                public void onFailure(Call<Result> call, Throwable t) {
+                    hideProgressDialog();
+                    Toast.makeText(getApplicationContext(), t.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            });
 
             if (TweetType == SearchType.OnePerson)
                 ChannelInfo.setVisibility(View.VISIBLE);

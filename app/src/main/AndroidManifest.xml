@@ -13,15 +13,15 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name="sdp.project.twitter.MainActivity"
+        <activity android:name="sdp.project.twitter.Activities.MainActivity"
                   android:windowSoftInputMode="adjustPan">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="sdp.project.twitter.LoginActivity"></activity>
-        <activity android:name="sdp.project.twitter.RegisterActivity"></activity>
+        <activity android:name="sdp.project.twitter.Activities.LoginActivity"></activity>
+        <activity android:name="sdp.project.twitter.Activities.RegisterActivity"></activity>
 
     </application>
 

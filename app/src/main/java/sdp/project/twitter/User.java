@@ -1,46 +1,27 @@
 package sdp.project.twitter;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.util.Log;
+import com.google.gson.annotations.SerializedName;
 
 public class User {
 
-    private SharedPreferences sharedRef;
-    private volatile static User userInstance = null;
+    @SerializedName("user_id")
     private String UserID;
+    @SerializedName("username")
     private String Username;
+    @SerializedName("email")
     private String Email;
-    private String Password;
+    @SerializedName("picture_path")
     private String Picture_path;
 
-    private User(Context context) {
-        sharedRef = context.getSharedPreferences("myRef", Context.MODE_PRIVATE);
-        this.UserID = sharedRef.getString("UserID", "0");;
-        this.Username = sharedRef.getString("Username", "0");;
-        this.Email = sharedRef.getString("Email", "0");;
-        this.Password = sharedRef.getString("Password", "0");;
-        this.Picture_path = sharedRef.getString("Picture_path", "0");;
+    public User(String user_id, String username, String email, String picture_path) {
+        this.UserID = user_id;
+        this.Username = username;
+        this.Email = email;
+        this.Picture_path = picture_path;
     }
 
-    public static User getInstance(Context context) {
-        if (userInstance == null) {
-            synchronized (User.class) {
-                if (userInstance == null) {
-                    userInstance = new User(context);
-                    Log.i("LOL", "CREATED USER");
-                }
-            }
-        }
-        return userInstance;
-    }
-
-    public static void clearUserInstance(){
-        userInstance = null;
-    }
-
-    public String getUserID() {
-        return UserID;
+    public int getUserID() {
+        return Integer.parseInt(UserID);
     }
 
     public String getUsername() {
@@ -57,14 +38,6 @@ public class User {
 
     public void setEmail(String email) {
         Email = email;
-    }
-
-    public String getPassword() {
-        return Password;
-    }
-
-    public void setPassword(String password) {
-        Password = password;
     }
 
     public String getPicture_path() {

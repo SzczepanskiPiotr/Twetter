@@ -1,4 +1,4 @@
-package sdp.project.twitter;
+package sdp.project.twitter.Activities;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -8,14 +8,13 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
@@ -33,22 +32,23 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.apache.commons.validator.routines.EmailValidator;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.apache.commons.validator.routines.EmailValidator;
-
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 import sdp.project.tweeter.R;
+import sdp.project.twitter.API.*;
+import sdp.project.twitter.Result;
+import sdp.project.twitter.SaveSettings;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -61,8 +61,6 @@ public class RegisterActivity extends AppCompatActivity {
     private static final String TAG = "AnonymousAuth";
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,7 +93,7 @@ public class RegisterActivity extends AppCompatActivity {
         };
     }
 
-    public void buRegister(View view){
+    public void buRegister(View view) {
         showProgressDialog();
         FirebaseStorage storage = FirebaseStorage.getInstance();
         // Create a storage reference
@@ -103,12 +101,12 @@ public class RegisterActivity extends AppCompatActivity {
         DateFormat df = new SimpleDateFormat("ddMMyyHHmmss");
         Date dateobj = new Date();
 
-        final String ImagePath= df.format(dateobj) +".jpg";
+        final String ImagePath = df.format(dateobj) + ".jpg";
         final StorageReference avatarsStorage = storageRef.child(ImagePath);
         ivUserImage.setDrawingCacheEnabled(true);
         ivUserImage.buildDrawingCache();
         // Bitmap bitmap = imageView.getDrawingCache();
-        BitmapDrawable drawable = (BitmapDrawable)ivUserImage.getDrawable();
+        BitmapDrawable drawable = (BitmapDrawable) ivUserImage.getDrawable();
         Bitmap bitmap = drawable.getBitmap();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
@@ -140,13 +138,43 @@ public class RegisterActivity extends AppCompatActivity {
                         if (etName.getText().toString().equals("") || etEmail.getText().toString().equals("") || etPassword.getText().toString().equals("")) {
                             hideProgressDialog();
                             Toast.makeText(getApplicationContext(), "One of the fields is empty!", Toast.LENGTH_SHORT).show();
-                        }else if(!EmailValidator.getInstance().isValid(etEmail.getText().toString())){
+                        } else if (!EmailValidator.getInstance().isValid(etEmail.getText().toString())) {
                             hideProgressDialog();
                             Toast.makeText(getApplicationContext(), "Wrong email form!", Toast.LENGTH_SHORT).show();
-                        }
-                        else {
-                            String url = "https://pszczepanski.000webhostapp.com/Register.php?username=" + name + "&email=" + etEmail.getText().toString() + "&password=" + etPassword.getText().toString() + "&picture_path=" + downloadUrl;
-                            new MyAsyncTaskGetNews().execute(url);
+                        } else {
+                            //building retrofit object
+                            Retrofit retrofit = new Retrofit.Builder()
+                                    .baseUrl(APIUrl.BASE_URL)
+                                    .addConverterFactory(GsonConverterFactory.create())
+                                    .build();
+
+                            //Defining retrofit api service
+                            APIService service = retrofit.create(APIService.class);
+
+                            //defining the call
+                            Call<Result> call = service.createUser(name, etEmail.getText().toString(), etPassword.getText().toString(),downloadUrl);
+
+                            //calling the api
+                            call.enqueue(new Callback<Result>() {
+                                @Override
+                                public void onResponse(Call<Result> call, Response<Result> response) {
+                                    //hiding progress dialog
+                                    hideProgressDialog();
+                                    if(!response.body().getError()){
+                                        finish();
+                                        Log.i("i",response.body().getUser().getUsername());
+                                        SaveSettings.getInstance(getApplicationContext()).userLogin(response.body().getUser());
+                                    }
+                                    //displaying the message from the response as toast
+                                    Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
+                                }
+
+                                @Override
+                                public void onFailure(Call<Result> call, Throwable t) {
+                                    hideProgressDialog();
+                                    Toast.makeText(getApplicationContext(), t.getMessage(), Toast.LENGTH_LONG).show();
+                                }
+                            });
                         }
                     }
                 });
@@ -253,75 +281,5 @@ public class RegisterActivity extends AppCompatActivity {
             cursor.close();
             ivUserImage.setImageBitmap(BitmapFactory.decodeFile(picturePath));
         }
-    }
-
-    public class MyAsyncTaskGetNews extends AsyncTask<String, String, String> {
-
-        @Override
-        protected void onPreExecute() {
-            //before works
-        }
-
-        @Override
-        protected String doInBackground(String... params) {
-            try {
-                String NewsData;
-                //define the url we have to connect with
-                URL url = new URL(params[0]);
-                //make connect with url and send request
-                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-                //waiting for 7000ms for response
-                urlConnection.setConnectTimeout(7000);//set timeout to 5 seconds
-
-                try {
-                    //getting the response data
-                    InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-                    //convert the stream to string
-                    Operations operations = new Operations(getApplicationContext());
-                    NewsData = operations.ConvertInputToStringNoChange(in);
-                    //send to display data
-                    publishProgress(NewsData);
-                } finally {
-                    //end connection
-                    urlConnection.disconnect();
-                }
-            }catch (Exception ex){}
-            return null;
-        }
-
-        protected void onProgressUpdate(String... progress) {
-            try {
-                JSONObject json= new JSONObject(progress[0]);
-                //display response data
-                if (json.getString("msg")==null)
-                    return;
-                else if (json.getString("msg").equalsIgnoreCase("fail")) {
-                    hideProgressDialog();
-                    Toast.makeText(getApplicationContext(),"Cannot create this account",Toast.LENGTH_LONG).show();
-                    return;
-                }
-                else if (json.getString("msg").equalsIgnoreCase("user is added")) {
-                    Toast.makeText(getApplicationContext(), json.getString("msg"), Toast.LENGTH_LONG).show();
-                    finish();
-                    //String name="";
-                    //name = java.net.URLEncoder.encode( etName.getText().toString() , "UTF-8");
-                    //String url="https://pszczepanski.000webhostapp.com/Login.php?username="+name+"&password="+etPassword.getText().toString() ;
-                    //new MyAsyncTaskGetNews().execute(url);
-                }
-                /*else if (json.getString("msg").equalsIgnoreCase("Pass Login")) {
-                    JSONArray UserInfo = new JSONArray( json.getString("info"));
-                    JSONObject UserCredential = UserInfo.getJSONObject(0);
-                    //Toast.makeText(getApplicationContext(),UserCredential.getString("user_id"),Toast.LENGTH_LONG).show();
-                    hideProgressDialog();
-                    SaveSettings saveSettings = new SaveSettings(getApplicationContext());
-                    saveSettings.SaveData(UserCredential.getString("user_id"), UserCredential.getString("username"), UserCredential.getString("email"), UserCredential.getString("password"), UserCredential.getString("picture_path"));
-                    finish(); //close this activity
-                }*/
-            } catch (Exception ex) {
-                Log.d("er",  ex.getMessage());
-            }
-        }
-
-        protected void onPostExecute(String  result2){ }
     }
 }

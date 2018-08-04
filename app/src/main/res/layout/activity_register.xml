@@ -8,7 +8,7 @@
     android:paddingLeft="16px"
     android:paddingRight="16px"
     android:paddingTop="16px"
-    tools:context="sdp.project.twitter.RegisterActivity">
+    tools:context="sdp.project.twitter.Activities.RegisterActivity">
 
     <LinearLayout
         android:gravity="center"
