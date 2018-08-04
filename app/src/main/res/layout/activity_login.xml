@@ -21,7 +21,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="10"
-            android:hint="enter username"
+            android:hint="@string/login_usernameHint"
             android:inputType="textPersonName" />
 
         <EditText
@@ -30,13 +30,13 @@
             android:inputType="textPassword"
             android:ems="10"
             android:id="@+id/etPassword"
-            android:hint="enter password" />
+            android:hint="@string/login_passwordHint" />
 
         <Button
             android:layout_width="195px"
             android:layout_height="60dp"
-            android:text="Login"
-            android:id="@+id/bulogin"
+            android:text="@string/login_loginButton"
+            android:id="@+id/buLogin"
             android:background="@drawable/round_background_blue"
             android:layout_marginTop="10dp"
             android:paddingRight="5dp"
@@ -51,7 +51,7 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:layout_marginTop="20dp"
-            android:text="Tap here to register" />
+            android:text="@string/login_goToRegisterHint" />
 
 
     </LinearLayout>

@@ -5,9 +5,7 @@ import android.content.Intent;
 import android.support.annotation.VisibleForTesting;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,14 +23,12 @@ import sdp.project.twitter.API.APIService;
 import sdp.project.twitter.API.APIUrl;
 import sdp.project.twitter.Result;
 import sdp.project.twitter.SaveSettings;
-import sdp.project.twitter.User;
 
 public class LoginActivity extends AppCompatActivity {
 
     // UI references.
     private EditText etName;
     private EditText etPassword;
-    private TextView goToRegister;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,13 +36,10 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
         etName = findViewById(R.id.etName);
         etPassword = findViewById(R.id.etPassword);
-        goToRegister = findViewById(R.id.goToRegister);
-        goToRegister.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(getApplicationContext(),RegisterActivity.class);
-                startActivity(i);
-            }
+        TextView goToRegister = findViewById(R.id.goToRegister);
+        goToRegister.setOnClickListener(v -> {
+            Intent i = new Intent(getApplicationContext(),RegisterActivity.class);
+            startActivity(i);
         });
     }
 

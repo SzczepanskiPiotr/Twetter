@@ -21,7 +21,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="10"
-            android:hint="enter username" />
+            android:hint="@string/login_usernameHint" />
 
         <EditText
             android:id="@+id/etEmail"
@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:inputType="textEmailAddress"
             android:ems="10"
-            android:hint="enter email" />
+            android:hint="@string/register_emailHint" />
 
         <EditText
             android:id="@+id/etPassword"
@@ -37,14 +37,14 @@
             android:layout_height="wrap_content"
             android:inputType="textPassword"
             android:ems="10"
-            android:hint="enter password" />
+            android:hint="@string/login_passwordHint" />
 
         <ImageView
             android:adjustViewBounds="true"
             android:scaleType="fitCenter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/nonameuser"
+            android:src="@drawable/no_name_user"
             android:layout_marginLeft="5dp"
             android:layout_marginRight="5dp"
             android:id="@+id/ivUserImage"
@@ -57,7 +57,7 @@
         <Button
             android:layout_width="195px"
             android:layout_height="60dp"
-            android:text="Register"
+            android:text="@string/register_registerButton"
             android:id="@+id/buRegister"
             android:background="@drawable/round_background_blue"
             android:layout_marginTop="10dp"
@@ -66,8 +66,5 @@
             android:textColor="#fdfffa"
             android:onClick ="buRegister"
             />
-
-
-
     </LinearLayout>
 </RelativeLayout>

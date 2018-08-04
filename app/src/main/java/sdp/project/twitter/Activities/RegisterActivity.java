@@ -21,11 +21,6 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
@@ -37,7 +32,6 @@ import org.apache.commons.validator.routines.EmailValidator;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import retrofit2.Call;
@@ -70,25 +64,17 @@ public class RegisterActivity extends AppCompatActivity {
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         ivUserImage = findViewById(R.id.ivUserImage);
-        ivUserImage.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                CheckUserPermission();
-            }
-        });
+        ivUserImage.setOnClickListener(v -> CheckUserPermission());
 
         mAuth = FirebaseAuth.getInstance();
-        mAuthListener = new FirebaseAuth.AuthStateListener() {
-            @Override
-            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                FirebaseUser user = firebaseAuth.getCurrentUser();
-                if (user != null) {
-                    // User is signed in
-                    Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
-                } else {
-                    // User is signed out
-                    Log.d(TAG, "onAuthStateChanged:signed_out");
-                }
+        mAuthListener = firebaseAuth -> {
+            FirebaseUser user = firebaseAuth.getCurrentUser();
+            if (user != null) {
+                // User is signed in
+                Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
+            } else {
+                // User is signed out
+                Log.d(TAG, "onAuthStateChanged:signed_out");
             }
         };
     }
@@ -98,7 +84,7 @@ public class RegisterActivity extends AppCompatActivity {
         FirebaseStorage storage = FirebaseStorage.getInstance();
         // Create a storage reference
         StorageReference storageRef = storage.getReferenceFromUrl("gs://tweeter-55347.appspot.com");
-        DateFormat df = new SimpleDateFormat("ddMMyyHHmmss");
+        DateFormat df = DateFormat.getDateTimeInstance();
         Date dateobj = new Date();
 
         final String ImagePath = df.format(dateobj) + ".jpg";
@@ -113,73 +99,61 @@ public class RegisterActivity extends AppCompatActivity {
         byte[] data = baos.toByteArray();
 
         UploadTask uploadTask = avatarsStorage.putBytes(data);
-        uploadTask.addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception exception) {
-                // Handle unsuccessful uploads
+        uploadTask.addOnFailureListener(exception -> {
+            // Handle unsuccessful uploads
+        }).addOnSuccessListener(taskSnapshot -> avatarsStorage.getDownloadUrl().addOnSuccessListener(uri -> {
+            // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download URL.
+            String downloadUrl = uri.toString();
+            String name = "";
+            try {
+                //for space with name
+                name = java.net.URLEncoder.encode(etName.getText().toString(), "UTF-8");
+                downloadUrl = java.net.URLEncoder.encode(downloadUrl, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+
             }
-        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-            @Override
-            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                avatarsStorage.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+            if (etName.getText().toString().equals("") || etEmail.getText().toString().equals("") || etPassword.getText().toString().equals("")) {
+                hideProgressDialog();
+                Toast.makeText(getApplicationContext(), "One of the fields is empty!", Toast.LENGTH_SHORT).show();
+            } else if (!EmailValidator.getInstance().isValid(etEmail.getText().toString())) {
+                hideProgressDialog();
+                Toast.makeText(getApplicationContext(), "Wrong email form!", Toast.LENGTH_SHORT).show();
+            } else {
+                //building retrofit object
+                Retrofit retrofit = new Retrofit.Builder()
+                        .baseUrl(APIUrl.BASE_URL)
+                        .addConverterFactory(GsonConverterFactory.create())
+                        .build();
+
+                //Defining retrofit api service
+                APIService service = retrofit.create(APIService.class);
+
+                //defining the call
+                Call<Result> call = service.createUser(name, etEmail.getText().toString(), etPassword.getText().toString(),downloadUrl);
+
+                //calling the api
+                call.enqueue(new Callback<Result>() {
                     @Override
-                    public void onSuccess(Uri uri) {
-                        // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download URL.
-                        Uri downloadUri = uri;
-                        String downloadUrl = downloadUri.toString();
-                        String name = "";
-                        try {
-                            //for space with name
-                            name = java.net.URLEncoder.encode(etName.getText().toString(), "UTF-8");
-                            downloadUrl = java.net.URLEncoder.encode(downloadUrl, "UTF-8");
-                        } catch (UnsupportedEncodingException e) {
-
+                    public void onResponse(Call<Result> call, Response<Result> response) {
+                        //hiding progress dialog
+                        hideProgressDialog();
+                        if(!response.body().getError()){
+                            finish();
+                            Log.i("i",response.body().getUser().getUsername());
+                            SaveSettings.getInstance(getApplicationContext()).userLogin(response.body().getUser());
                         }
-                        if (etName.getText().toString().equals("") || etEmail.getText().toString().equals("") || etPassword.getText().toString().equals("")) {
-                            hideProgressDialog();
-                            Toast.makeText(getApplicationContext(), "One of the fields is empty!", Toast.LENGTH_SHORT).show();
-                        } else if (!EmailValidator.getInstance().isValid(etEmail.getText().toString())) {
-                            hideProgressDialog();
-                            Toast.makeText(getApplicationContext(), "Wrong email form!", Toast.LENGTH_SHORT).show();
-                        } else {
-                            //building retrofit object
-                            Retrofit retrofit = new Retrofit.Builder()
-                                    .baseUrl(APIUrl.BASE_URL)
-                                    .addConverterFactory(GsonConverterFactory.create())
-                                    .build();
+                        //displaying the message from the response as toast
+                        Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
+                    }
 
-                            //Defining retrofit api service
-                            APIService service = retrofit.create(APIService.class);
-
-                            //defining the call
-                            Call<Result> call = service.createUser(name, etEmail.getText().toString(), etPassword.getText().toString(),downloadUrl);
-
-                            //calling the api
-                            call.enqueue(new Callback<Result>() {
-                                @Override
-                                public void onResponse(Call<Result> call, Response<Result> response) {
-                                    //hiding progress dialog
-                                    hideProgressDialog();
-                                    if(!response.body().getError()){
-                                        finish();
-                                        Log.i("i",response.body().getUser().getUsername());
-                                        SaveSettings.getInstance(getApplicationContext()).userLogin(response.body().getUser());
-                                    }
-                                    //displaying the message from the response as toast
-                                    Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
-                                }
-
-                                @Override
-                                public void onFailure(Call<Result> call, Throwable t) {
-                                    hideProgressDialog();
-                                    Toast.makeText(getApplicationContext(), t.getMessage(), Toast.LENGTH_LONG).show();
-                                }
-                            });
-                        }
+                    @Override
+                    public void onFailure(Call<Result> call, Throwable t) {
+                        hideProgressDialog();
+                        Toast.makeText(getApplicationContext(), t.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });
             }
-        });
+        }));
     }
 
     @Override
@@ -199,13 +173,10 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void signInAnonymously() {
-        mAuth.signInAnonymously().addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-            @Override
-            public void onComplete(@NonNull Task<AuthResult> task) {
-                Log.d(TAG, "signInAnonymously:onComplete:" + task.isSuccessful());
-                if(!task.isSuccessful()){
-                    Log.w(TAG, "signInAnonymously", task.getException());
-                }
+        mAuth.signInAnonymously().addOnCompleteListener(this, task -> {
+            Log.d(TAG, "signInAnonymously:onComplete:" + task.isSuccessful());
+            if(!task.isSuccessful()){
+                Log.w(TAG, "signInAnonymously", task.getException());
             }
         });
     }
@@ -244,7 +215,7 @@ public class RegisterActivity extends AppCompatActivity {
     final private int REQUEST_CODE_ASK_PERMISSIONS = 123;
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
             case REQUEST_CODE_ASK_PERMISSIONS:
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -273,7 +244,9 @@ public class RegisterActivity extends AppCompatActivity {
             Uri selectedImage = data.getData();
             String[] filePathColumn = {MediaStore.Images.Media.DATA};
 
+            assert selectedImage != null;
             Cursor cursor = getContentResolver().query(selectedImage, filePathColumn, null, null, null);
+            assert cursor != null;
             cursor.moveToFirst();
 
             int columnIndex = cursor.getColumnIndex(filePathColumn[0]);

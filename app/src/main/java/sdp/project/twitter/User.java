@@ -13,7 +13,7 @@ public class User {
     @SerializedName("picture_path")
     private String Picture_path;
 
-    public User(String user_id, String username, String email, String picture_path) {
+    User(String user_id, String username, String email, String picture_path) {
         this.UserID = user_id;
         this.Username = username;
         this.Email = email;

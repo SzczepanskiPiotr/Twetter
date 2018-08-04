@@ -1,3 +1,21 @@
 <resources>
     <string name="app_name">Twetter</string>
+    <string name="buFollow_unFollow">Un Follow</string>
+    <string name="buFollow_follow">Follow</string>
+    <string name="character_counter">%1$d/150</string>
+    <string name="login_usernameHint">enter username</string>
+    <string name="login_passwordHint">enter password</string>
+    <string name="login_loginButton">Login</string>
+    <string name="login_goToRegisterHint">Tap here to register</string>
+    <string name="main_username">User name</string>
+    <string name="main_subscribers">subscribers</string>
+    <string name="main_FollowButton">Follow</string>
+    <string name="register_emailHint">enter email</string>
+    <string name="register_registerButton">Register</string>
+    <string name="noTweets">No more stories</string>
+    <string name="empty_character_counter">0/150</string>
+    <string name="empty_add_tweet">What you think?</string>
+    <string name="sample_tweet_date">2015-12-11</string>
+    <string name="sample_tweet_user">User name</string>
+    <string name="sample_tweet_text">This is sample tweet</string>
 </resources>

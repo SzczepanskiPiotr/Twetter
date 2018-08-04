@@ -52,7 +52,7 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/round_background_white"
                 android:padding="2dp"
-                android:text="2015-12-11"
+                android:text="@string/sample_tweet_date"
                 android:textAppearance="?android:attr/textAppearanceSmall"
                 android:textSize="10dp" />
 
@@ -61,15 +61,15 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_alignParentTop="true"
-                android:layout_toEndOf="@+id/bulogin"
+                android:layout_toEndOf="@+id/buLogin"
                 android:layout_toLeftOf="@+id/webView"
-                android:layout_toRightOf="@+id/bulogin"
+                android:layout_toRightOf="@+id/buLogin"
                 android:layout_weight="1"
                 android:focusable="false"
                 android:focusableInTouchMode="false"
                 android:gravity="right"
                 android:paddingRight="3dp"
-                android:text="User name"
+                android:text="@string/sample_tweet_user"
                 android:textAppearance="?android:attr/textAppearanceLarge"
                 android:textColor="#f9f9f9"
                 android:textSize="12dp"
@@ -86,7 +86,7 @@
                 android:layout_alignParentRight="true"
                 android:layout_alignParentTop="true"
 
-                android:src="@drawable/nonameuser" />
+                android:src="@drawable/no_name_user" />
 
 
         </LinearLayout>
@@ -104,10 +104,10 @@
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:layout_toLeftOf="@+id/webView"
-            android:layout_toRightOf="@+id/bulogin"
-            android:layout_toEndOf="@+id/bulogin"
+            android:layout_toRightOf="@+id/buLogin"
+            android:layout_toEndOf="@+id/buLogin"
             android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="This is sample tweet"
+            android:text="@string/sample_tweet_text"
             android:textSize="18dp"
             android:textColor="#ffffff"
             android:textAlignment="gravity"
@@ -128,7 +128,7 @@
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"
             android:layout_alignBottom="@+id/txtflollower"
-            android:src="@drawable/nonameuser"
+            android:src="@drawable/no_name_user"
             android:layout_marginLeft="5dp"
             android:layout_marginRight="5dp"
             android:layout_marginBottom="1dp"
