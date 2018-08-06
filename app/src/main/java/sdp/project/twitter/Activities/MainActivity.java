@@ -9,6 +9,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
@@ -16,6 +17,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
+import android.support.media.ExifInterface;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -36,14 +38,15 @@ import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-import com.squareup.picasso.Picasso;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -53,7 +56,6 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
-
 import sdp.project.tweeter.R;
 import sdp.project.twitter.API.APIService;
 import sdp.project.twitter.API.APIUrl;
@@ -249,7 +251,7 @@ public class MainActivity extends AppCompatActivity {
     //TextView etCounter;
     String downloadUrl = "none";
     Boolean loadedImage = false;
-    String loadImagePath = "";
+    Bitmap loadImageBitmap = null;
 
     private class TweetWall extends BaseAdapter {
 
@@ -297,7 +299,7 @@ public class MainActivity extends AppCompatActivity {
                     iv_temp = myView.findViewById(R.id.iv_temp);
                     iv_temp.setVisibility(ImageView.GONE);
                     if (loadedImage) {
-                        iv_temp.setImageBitmap(BitmapFactory.decodeFile(loadImagePath));
+                        iv_temp.setImageBitmap(loadImageBitmap);
                         iv_temp.setVisibility(ImageView.VISIBLE);
                     }
                     iv_attach.setOnClickListener(view -> CheckUserPermission());
@@ -354,6 +356,7 @@ public class MainActivity extends AppCompatActivity {
                                                             Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
                                                             etPost.setText("");
                                                             loadedImage = false;
+                                                            loadImageBitmap = null;
                                                             downloadUrl = "none";
                                                             LoadTweets(0, SearchType.MyFollowing);
                                                         }
@@ -389,6 +392,7 @@ public class MainActivity extends AppCompatActivity {
                                         etPost.setText("");
                                         loadedImage = false;
                                         downloadUrl = "none";
+                                        loadImageBitmap = null;
                                         LoadTweets(0, SearchType.MyFollowing);
                                     }
 
@@ -444,7 +448,8 @@ public class MainActivity extends AppCompatActivity {
                         if (SaveSettings.getInstance(getApplicationContext()).getUser().getUserID() != SelectedUserID) {
                             LoadTweets(0, SearchType.OnePerson);
                             txtNameFollowers.setText(t.username);
-                            Picasso.get().load(t.picture_path).into(iv_channel_icon);
+                            //Picasso.get().load(t.picture_path).into(iv_channel_icon);
+                            Glide.with(getApplicationContext()).load(t.picture_path).into(iv_channel_icon);
                             //TODO: I THINK FOLLOWING STATUS IS ALREADY IN 'tweetlist' REST CALL
                             //building retrofit object
                             Retrofit retrofit = new Retrofit.Builder()
@@ -489,9 +494,11 @@ public class MainActivity extends AppCompatActivity {
                     txt_tweet_date.setText(t.tweet_date);
 
                     ImageView tweet_picture = myView.findViewById(R.id.tweet_picture);
-                    Picasso.get().load(t.tweet_picture).into(tweet_picture);
+                   // Picasso.get().load(t.tweet_picture).into(tweet_picture);
+                    Glide.with(getApplicationContext()).load(t.tweet_picture).into(tweet_picture);
                     ImageView picture_path = myView.findViewById(R.id.picture_path);
-                    Picasso.get().load(t.picture_path).into(picture_path);
+                    //Picasso.get().load(t.picture_path).into(picture_path);
+                    Glide.with(getApplicationContext()).load(t.picture_path).into(picture_path);
 
                     final ImageView iv_share = myView.findViewById(R.id.iv_share);
                     final TextView favouriteCount = myView.findViewById(R.id.txt_favouriteCount);
@@ -625,10 +632,7 @@ public class MainActivity extends AppCompatActivity {
             Uri selectedImage = data.getData();
             String[] filePathColumn = {MediaStore.Images.Media.DATA};
 
-            assert selectedImage != null;
-            Cursor cursor = getContentResolver().query(selectedImage,
-                    filePathColumn, null, null, null);
-            assert cursor != null;
+            Cursor cursor = getContentResolver().query(selectedImage, filePathColumn, null, null, null);
             cursor.moveToFirst();
 
             int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
@@ -636,10 +640,65 @@ public class MainActivity extends AppCompatActivity {
             cursor.close();
             // postImage.setImageBitmap(BitmapFactory.decodeFile(picturePath));
 
-            iv_temp.setImageBitmap(BitmapFactory.decodeFile(picturePath));
+            final BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inMutable = true;
+            Bitmap b = BitmapFactory.decodeFile(picturePath,options);
+            if(getExifRotation(picturePath)!=0){
+                Matrix matrix = new Matrix();
+
+                matrix.postRotate(getExifRotation(picturePath));
+
+                Bitmap scaledBitmap = Bitmap.createScaledBitmap(b, b.getWidth(), b.getHeight(), true);
+
+                b = Bitmap.createBitmap(scaledBitmap, 0, 0, scaledBitmap.getWidth(), scaledBitmap.getHeight(), matrix, true);
+            }
+            float maxHeight = 512;
+            float maxWidth = 512;
+            float actualWidth = b.getWidth();
+            float actualHeight = b.getHeight();
+            float imgRatio = (actualWidth / actualHeight);
+            float maxRatio = maxWidth / maxHeight;
+            Log.i("IMG", "ACT_WIDTH:"+actualWidth+"ACT_HEIGHT:"+actualHeight+"IMG_RATIO"+imgRatio);
+
+            //      width and height values are set maintaining the aspect ratio of the image
+            if (actualHeight > maxHeight || actualWidth > maxWidth) {
+                if (imgRatio < maxRatio) {
+                    imgRatio = maxHeight / actualHeight;
+                    actualWidth = (imgRatio * actualWidth);
+                    actualHeight = maxHeight;
+                } else if (imgRatio > maxRatio) {
+                    imgRatio = maxWidth / actualWidth;
+                    actualHeight = (imgRatio * actualHeight);
+                    actualWidth = maxWidth;
+                }
+            }
+            Log.i("IMG", "NEW_WIDTH:"+Math.round(actualWidth)+"NEW_HEIGHT:"+Math.round(actualHeight)+"IMG_RATIO"+imgRatio+"ROTATION:"+getExifRotation(picturePath));
+
+            iv_temp.setImageBitmap(Bitmap.createScaledBitmap(b,Math.round(actualWidth),Math.round(actualHeight),false));
             iv_temp.setVisibility(ImageView.VISIBLE);
             loadedImage = true;
-            loadImagePath = picturePath;
+            loadImageBitmap = Bitmap.createScaledBitmap(b,Math.round(actualWidth),Math.round(actualHeight),false);
+        }
+    }
+
+    public static int getExifRotation(String filePath) {
+        if (filePath == null) return 0;
+        try {
+            ExifInterface exif = new ExifInterface(filePath);
+            // We only recognize a subset of orientation tag values
+            switch (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED)) {
+                case ExifInterface.ORIENTATION_ROTATE_90:
+                    return 90;
+                case ExifInterface.ORIENTATION_ROTATE_180:
+                    return 180;
+                case ExifInterface.ORIENTATION_ROTATE_270:
+                    return 270;
+                default:
+                    return ExifInterface.ORIENTATION_UNDEFINED;
+            }
+        } catch (IOException e) {
+            //  Log.e("Error getting Exif data", e);
+            return 0;
         }
     }
 
@@ -725,4 +784,5 @@ public class MainActivity extends AppCompatActivity {
         else
             ChannelInfo.setVisibility(View.GONE);
     }
+
 }
