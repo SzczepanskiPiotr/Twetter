@@ -117,15 +117,12 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1">
-            <ListView
-                android:background="#ffffff"
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/RV_tweets"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:id="@+id/LVNews"
-                android:descendantFocusability="beforeDescendants"
-                android:divider="#ffffff"
-                android:dividerHeight="9dp"
-                android:layout_weight="1" />
+                android:layout_height="match_parent" />
+/>
         </RelativeLayout>
     </LinearLayout>
 </RelativeLayout>
