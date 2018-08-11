@@ -39,12 +39,12 @@ import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.squareup.picasso.Picasso;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -177,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 // Toast.makeText(co, query, Toast.LENGTH_LONG).show();
-                Query = null;
+                Query = query;
                 LoadTweets(0, SearchType.SearchIn);// search
                 searchView.setIconified(true);
                 return false;
@@ -274,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
             ImageView iv_attach;
             ImageView iv_temp;
 
-            public addTweetViewHolder(View viewItem){
+            addTweetViewHolder(View viewItem){
                 super(viewItem);
                 Log.i("I","UMMMMM111");
 
@@ -287,23 +287,23 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        public class loadingTweetViewHolder extends RecyclerView.ViewHolder{
+        class loadingTweetViewHolder extends RecyclerView.ViewHolder{
 
-            public loadingTweetViewHolder(View viewItem){
+            loadingTweetViewHolder(View viewItem){
                 super(viewItem);
 
             }
         }
 
-        public class noTweetViewHolder extends RecyclerView.ViewHolder{
+        class noTweetViewHolder extends RecyclerView.ViewHolder{
 
-            public noTweetViewHolder(View viewItem){
+            noTweetViewHolder(View viewItem){
                 super(viewItem);
 
             }
         }
 
-        public class singleTweetHolder extends RecyclerView.ViewHolder{
+        class singleTweetHolder extends RecyclerView.ViewHolder{
 
             TextView txtUserName;
             TextView txt_tweet;
@@ -314,7 +314,7 @@ public class MainActivity extends AppCompatActivity {
             TextView favouriteCount;
 
 
-            public singleTweetHolder(View viewItem){
+            singleTweetHolder(View viewItem){
                 super(viewItem);
 
                 txtUserName = viewItem.findViewById(R.id.txtUserName);
@@ -327,14 +327,15 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        public TweetWall(ArrayList<TweetItem> tweetWallAdapter, Context context) {
+        TweetWall(ArrayList<TweetItem> tweetWallAdapter, Context context) {
             Log.i("TEST: ", "CO TO SIĘ ODJANIEPAWLA, TWEET WALL KONSTRUKTOR WIOWOWOWOWO");
             this.context = context;
             this.tweetWallAdapter = tweetWallAdapter;
         }
 
+        @NonNull
         @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 
             Log.i("TEST: ", "CO TO SIĘ ODJANIEPAWLA, CREAAAAAAATREEEEEE");
 
@@ -368,7 +369,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onBindViewHolder(final RecyclerView.ViewHolder holder, final int position) {
+        public void onBindViewHolder(@NonNull final RecyclerView.ViewHolder holder, final int position) {
 
             TweetItem t = tweetWallAdapter.get(position);
             if (t != null) {
@@ -528,8 +529,8 @@ public class MainActivity extends AppCompatActivity {
                             if (SaveSettings.getInstance(getApplicationContext()).getUser().getUserID() != SelectedUserID) {
                                 LoadTweets(0, SearchType.OnePerson);
                                 txtNameFollowers.setText(t.username);
-                                //Picasso.get().load(t.picture_path).into(iv_channel_icon);
-                                Glide.with(getApplicationContext()).load(t.picture_path).into(iv_channel_icon);
+                                Picasso.get().load(t.picture_path).into(iv_channel_icon);
+                                //Glide.with(getApplicationContext()).load(t.picture_path).into(iv_channel_icon);
                                 //TODO: I THINK FOLLOWING STATUS IS ALREADY IN 'tweetlist' REST CALL
                                 //building retrofit object
                                 Retrofit retrofit = new Retrofit.Builder()
@@ -572,10 +573,10 @@ public class MainActivity extends AppCompatActivity {
 
                         ((singleTweetHolder) holder).txt_tweet_date.setText(t.tweet_date);
 
-                        // Picasso.get().load(t.tweet_picture).into(tweet_picture);
-                        Glide.with(getApplicationContext()).load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
-                        //Picasso.get().load(t.picture_path).into(picture_path);
-                        Glide.with(getApplicationContext()).load(t.picture_path).into(((singleTweetHolder) holder).picture_path);
+                        Picasso.get().load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
+                        //Glide.with(getApplicationContext()).load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
+                        Picasso.get().load(t.picture_path).into(((singleTweetHolder) holder).picture_path);
+                        //Glide.with(getApplicationContext()).load(t.picture_path).into(((singleTweetHolder) holder).picture_path);
 
 
                         ((singleTweetHolder) holder).iv_share.setOnClickListener(v -> {
@@ -721,7 +722,9 @@ public class MainActivity extends AppCompatActivity {
             Uri selectedImage = data.getData();
             String[] filePathColumn = {MediaStore.Images.Media.DATA};
 
+            assert selectedImage != null;
             Cursor cursor = getContentResolver().query(selectedImage, filePathColumn, null, null, null);
+            assert cursor != null;
             cursor.moveToFirst();
 
             int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
