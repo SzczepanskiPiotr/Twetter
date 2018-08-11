@@ -39,12 +39,12 @@ import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.squareup.picasso.Picasso;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -116,17 +116,18 @@ public class MainActivity extends AppCompatActivity {
         }
         Log.i("MAINACTIVITY: ", "LOGGING IN USER");
 
-        tweetWall = new ArrayList<TweetItem>();
+        tweetWall = new ArrayList<>();
 
         myTweetWall = new TweetWall(tweetWall,this);
+
+
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, OrientationHelper.VERTICAL, false);
 
         RecyclerView mRecyclerView = findViewById(R.id.RV_tweets);
         mRecyclerView.setLayoutManager(linearLayoutManager);
         mRecyclerView.setAdapter(myTweetWall);
-
-        LoadTweets(0, SearchType.MyFollowing);
+        LoadTweets(0, TweetsType);
     }
 
     @Override
@@ -163,6 +164,7 @@ public class MainActivity extends AppCompatActivity {
     Menu myMenu;
     String Query = "null";
 
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // add menu
@@ -177,9 +179,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 // Toast.makeText(co, query, Toast.LENGTH_LONG).show();
-                Query = null;
-                LoadTweets(0, SearchType.SearchIn);// search
+                searchView.onActionViewCollapsed();
+                Query = query;
+                TweetsType = SearchType.SearchIn;
+                LoadTweets(0, TweetsType);
                 searchView.setIconified(true);
+                searchView.setIconified(true);
+                searchView.clearFocus();
                 return false;
             }
 
@@ -197,8 +203,11 @@ public class MainActivity extends AppCompatActivity {
         // handle item selection
         switch (item.getItemId()) {
             case R.id.home: {
-                searchView.setIconified(true);
-                LoadTweets(0, SearchType.MyFollowing);
+                if(TweetsType != SearchType.MyFollowing) {
+                    searchView.setIconified(true);
+                    TweetsType = SearchType.MyFollowing;
+                    LoadTweets(0, TweetsType);
+                }
                 return true;
             }
             case R.id.logout: {
@@ -274,9 +283,8 @@ public class MainActivity extends AppCompatActivity {
             ImageView iv_attach;
             ImageView iv_temp;
 
-            public addTweetViewHolder(View viewItem){
+            addTweetViewHolder(View viewItem){
                 super(viewItem);
-                Log.i("I","UMMMMM111");
 
                 etCounter = viewItem.findViewById(R.id.etCounter);
                 etPost = viewItem.findViewById(R.id.etPost);
@@ -287,23 +295,21 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        public class loadingTweetViewHolder extends RecyclerView.ViewHolder{
+        class loadingTweetViewHolder extends RecyclerView.ViewHolder{
 
-            public loadingTweetViewHolder(View viewItem){
+            loadingTweetViewHolder(View viewItem){
                 super(viewItem);
-
             }
         }
 
-        public class noTweetViewHolder extends RecyclerView.ViewHolder{
+        class noTweetViewHolder extends RecyclerView.ViewHolder{
 
-            public noTweetViewHolder(View viewItem){
+            noTweetViewHolder(View viewItem){
                 super(viewItem);
-
             }
         }
 
-        public class singleTweetHolder extends RecyclerView.ViewHolder{
+        class singleTweetHolder extends RecyclerView.ViewHolder{
 
             TextView txtUserName;
             TextView txt_tweet;
@@ -314,7 +320,7 @@ public class MainActivity extends AppCompatActivity {
             TextView favouriteCount;
 
 
-            public singleTweetHolder(View viewItem){
+            singleTweetHolder(View viewItem){
                 super(viewItem);
 
                 txtUserName = viewItem.findViewById(R.id.txtUserName);
@@ -327,16 +333,14 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        public TweetWall(ArrayList<TweetItem> tweetWallAdapter, Context context) {
-            Log.i("TEST: ", "CO TO SIĘ ODJANIEPAWLA, TWEET WALL KONSTRUKTOR WIOWOWOWOWO");
+        TweetWall(ArrayList<TweetItem> tweetWallAdapter, Context context) {
             this.context = context;
             this.tweetWallAdapter = tweetWallAdapter;
         }
 
+        @NonNull
         @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-
-            Log.i("TEST: ", "CO TO SIĘ ODJANIEPAWLA, CREAAAAAAATREEEEEE");
+        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 
             View view;
             switch (viewType) {
@@ -368,13 +372,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onBindViewHolder(final RecyclerView.ViewHolder holder, final int position) {
+        public void onBindViewHolder(@NonNull final RecyclerView.ViewHolder holder, final int position) {
 
             TweetItem t = tweetWallAdapter.get(position);
             if (t != null) {
                 switch (t.tweet_date) {
                     case "add": {
-                        Log.i("I","UMMMMM");
                         final int[] counter = {0};
                         final String[] tweets = {""};
                         ((addTweetViewHolder) holder).etCounter.setText(getString(R.string.character_counter, counter[0]));
@@ -442,7 +445,8 @@ public class MainActivity extends AppCompatActivity {
                                                                 loadedImage = false;
                                                                 loadImageBitmap = null;
                                                                 downloadUrl = "none";
-                                                                LoadTweets(0, SearchType.MyFollowing);
+                                                                TweetsType = SearchType.MyFollowing;
+                                                                LoadTweets(0, TweetsType);
                                                             }
 
                                                             @Override
@@ -477,7 +481,8 @@ public class MainActivity extends AppCompatActivity {
                                             loadedImage = false;
                                             downloadUrl = "none";
                                             loadImageBitmap = null;
-                                            LoadTweets(0, SearchType.MyFollowing);
+                                            TweetsType = SearchType.MyFollowing;
+                                            LoadTweets(0, TweetsType);
                                         }
 
                                         @Override
@@ -526,10 +531,11 @@ public class MainActivity extends AppCompatActivity {
                         ((singleTweetHolder) holder).txtUserName.setOnClickListener(view -> {
                             SelectedUserID = t.user_id;
                             if (SaveSettings.getInstance(getApplicationContext()).getUser().getUserID() != SelectedUserID) {
-                                LoadTweets(0, SearchType.OnePerson);
+                                TweetsType = SearchType.OnePerson;
+                                LoadTweets(0, TweetsType);
                                 txtNameFollowers.setText(t.username);
-                                //Picasso.get().load(t.picture_path).into(iv_channel_icon);
-                                Glide.with(getApplicationContext()).load(t.picture_path).into(iv_channel_icon);
+                                Picasso.get().load(t.picture_path).into(iv_channel_icon);
+                                //Glide.with(getApplicationContext()).load(t.picture_path).into(iv_channel_icon);
                                 //TODO: I THINK FOLLOWING STATUS IS ALREADY IN 'tweetlist' REST CALL
                                 //building retrofit object
                                 Retrofit retrofit = new Retrofit.Builder()
@@ -572,10 +578,10 @@ public class MainActivity extends AppCompatActivity {
 
                         ((singleTweetHolder) holder).txt_tweet_date.setText(t.tweet_date);
 
-                        // Picasso.get().load(t.tweet_picture).into(tweet_picture);
-                        Glide.with(getApplicationContext()).load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
-                        //Picasso.get().load(t.picture_path).into(picture_path);
-                        Glide.with(getApplicationContext()).load(t.picture_path).into(((singleTweetHolder) holder).picture_path);
+                        Picasso.get().load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
+                        //Glide.with(getApplicationContext()).load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
+                        Picasso.get().load(t.picture_path).into(((singleTweetHolder) holder).picture_path);
+                        //Glide.with(getApplicationContext()).load(t.picture_path).into(((singleTweetHolder) holder).picture_path);
 
 
                         ((singleTweetHolder) holder).iv_share.setOnClickListener(v -> {
@@ -721,7 +727,9 @@ public class MainActivity extends AppCompatActivity {
             Uri selectedImage = data.getData();
             String[] filePathColumn = {MediaStore.Images.Media.DATA};
 
+            assert selectedImage != null;
             Cursor cursor = getContentResolver().query(selectedImage, filePathColumn, null, null, null);
+            assert cursor != null;
             cursor.moveToFirst();
 
             int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
@@ -792,6 +800,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void LoadTweets(int StartFrom, int TweetType) {
+        //setTitle(SaveSettings.getInstance(getApplicationContext()).getUser().getUsername());
+        //getActionBar().setTitle(SaveSettings.getInstance(getApplicationContext()).getUser().getUsername());
         Log.i("MAINACTIVITY: ", "LOADING TWEETS");
         int user_id = SaveSettings.getInstance(getApplicationContext()).getUser().getUserID();
         this.StartFrom = StartFrom;
@@ -856,7 +866,6 @@ public class MainActivity extends AppCompatActivity {
                     //add data and view it
                     tweetWall.addAll(response.body().getTweets());
                 }
-                Log.i("TEST: ", tweetWall.get(0).tweet_date);
                 myTweetWall.notifyDataSetChanged();
                 //displaying the message from the response as toast
                 Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
