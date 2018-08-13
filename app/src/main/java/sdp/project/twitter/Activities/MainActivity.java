@@ -69,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
 
     int StartFrom = 0;
     int TweetsType = SearchType.MyFollowing;
+    boolean LoadMore = false;
     //int totalItemCountVisible = 0; //totalItems visible
     LinearLayout ChannelInfo;
     TextView txtNameFollowers;
@@ -117,17 +118,25 @@ public class MainActivity extends AppCompatActivity {
         Log.i("MAINACTIVITY: ", "LOGGING IN USER");
 
         tweetWall = new ArrayList<>();
-
         myTweetWall = new TweetWall(tweetWall,this);
 
-
-
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, OrientationHelper.VERTICAL, false);
-
         RecyclerView mRecyclerView = findViewById(R.id.RV_tweets);
         mRecyclerView.setLayoutManager(linearLayoutManager);
         mRecyclerView.setAdapter(myTweetWall);
         LoadTweets(0, TweetsType);
+        mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                if(linearLayoutManager.findLastVisibleItemPosition() == tweetWall.size()-1 && LoadMore && !tweetWall.get(tweetWall.size()-1).tweet_date.equals("notweet"))
+                {
+                    LoadMore = false;
+                    LoadTweets(tweetWall.size()-1,TweetsType);
+                    Log.i("i","time to load more");
+                }
+            }
+        });
     }
 
     @Override
@@ -179,7 +188,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 // Toast.makeText(co, query, Toast.LENGTH_LONG).show();
-                searchView.onActionViewCollapsed();
                 Query = query;
                 TweetsType = SearchType.SearchIn;
                 LoadTweets(0, TweetsType);
@@ -365,7 +373,7 @@ public class MainActivity extends AppCompatActivity {
 
             switch (tweetWallAdapter.get(position).tweet_date) {
                 case "add" :  return 0;
-                case "loading ":  return 1;
+                case "loading":  return 1;
                 case "notweet" :  return  2;
                 default : return 3;
             }
@@ -519,6 +527,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     case "loading": {
+                        Log.i("I","TWEETLOADING");
                         break;
                     }
                     case "notweet": {
@@ -847,10 +856,12 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         //remove we are loading now
                         tweetWall.remove(tweetWall.size() - 1);
+                        tweetWall.add(new TweetItem(0, null, null,
+                                "notweet", 0, null, null, 0, false));
                     }
                     // listnewsData.remove(listnewsData.size()-1);
-                    tweetWall.add(new TweetItem(0, null, null,
-                            "notweet", 0, null, null, 0, false));
+                    //tweetWall.add(new TweetItem(0, null, null,
+                            //"notweet", 0, null, null, 0, false));
                 } else {
                     if (StartFrom == 0) {
                         tweetWall.clear();
@@ -866,6 +877,7 @@ public class MainActivity extends AppCompatActivity {
                     //add data and view it
                     tweetWall.addAll(response.body().getTweets());
                 }
+                LoadMore = true;
                 myTweetWall.notifyDataSetChanged();
                 //displaying the message from the response as toast
                 Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
