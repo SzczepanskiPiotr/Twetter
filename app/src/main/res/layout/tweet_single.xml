@@ -14,25 +14,23 @@
     >
 
     <LinearLayout
-        android:layout_weight="1"
-        android:orientation="vertical"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="5dp"
+        android:layout_weight="1"
+        android:background="@drawable/round_background_blue"
         android:gravity="center"
         android:layoutDirection="rtl"
-        android:textAlignment="center"
-        android:layout_marginRight="10dp"
-        android:layout_marginLeft="10dp"
-        android:layout_marginTop="5dp"
-        android:background="@drawable/round_background_blue"
-        android:paddingTop="2dp"
+        android:orientation="vertical"
         android:paddingBottom="1dp"
         android:paddingLeft="5dp"
         android:paddingRight="5dp"
-        >
+        android:paddingTop="2dp"
+        android:textAlignment="center">
 
         <LinearLayout
-            android:layout_weight="0"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:foregroundTint="#ffffff"
@@ -47,132 +45,123 @@
 
             <TextView
                 android:id="@+id/txt_tweet_date"
-                android:layout_weight="0"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_weight="0"
                 android:background="@drawable/round_background_white"
                 android:padding="2dp"
                 android:text="@string/sample_tweet_date"
                 android:textAppearance="?android:attr/textAppearanceSmall"
-                android:textSize="10dp" />
+                android:textSize="12sp" />
 
             <TextView
                 android:id="@+id/txtUserName"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignParentTop="true"
-                android:layout_toEndOf="@+id/buLogin"
-                android:layout_toLeftOf="@+id/webView"
-                android:layout_toRightOf="@+id/buLogin"
                 android:layout_weight="1"
                 android:focusable="false"
                 android:focusableInTouchMode="false"
-                android:gravity="right"
-                android:paddingRight="3dp"
+                android:gravity="end"
+                android:paddingEnd="3dp"
+                android:paddingStart="0dp"
                 android:text="@string/sample_tweet_user"
                 android:textAppearance="?android:attr/textAppearanceLarge"
                 android:textColor="#f9f9f9"
-                android:textSize="12dp"
+                android:textSize="12sp"
                 android:textStyle="bold" />
 
 
             <ImageView
                 android:id="@+id/picture_path"
-                android:layout_weight="0"
-                android:layout_width="50px"
-                android:layout_height="50px"
-                android:layout_alignBottom="@+id/txtflollower"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentTop="true"
-
-                android:src="@drawable/no_name_user" />
-
-
-        </LinearLayout>
-
-        <View
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="4dp"
-            android:layout_width="match_parent"
-            android:layout_height="2dp"
-            android:background="@drawable/round_background_white"/>
-
-        <TextView
-            android:id="@+id/txt_tweet"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_toLeftOf="@+id/webView"
-            android:layout_toRightOf="@+id/buLogin"
-            android:layout_toEndOf="@+id/buLogin"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="@string/sample_tweet_text"
-            android:textSize="18dp"
-            android:textColor="#ffffff"
-            android:textAlignment="gravity"
-            android:fontFamily="sans-serif-medium"
-            android:gravity="left"
-            android:paddingBottom="2dp"
-            android:paddingRight="5dp"/>
-
-        <ImageView
-            android:id="@+id/tweet_picture"
-            android:layout_weight="0"
-            android:background="#ffffff"
-            android:adjustViewBounds="true"
-            android:scaleType="fitXY"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true"
-            android:layout_alignBottom="@+id/txtflollower"
-            android:src="@drawable/no_name_user"
-            android:layout_marginLeft="5dp"
-            android:layout_marginRight="5dp"
-            android:layout_marginBottom="1dp"
-            />
-
-        <View
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="4dp"
-            android:layout_width="match_parent"
-            android:layout_height="2dp"
-            android:background="@drawable/round_background_white"/>
-
-        <LinearLayout
-            android:paddingLeft="10dp"
-            android:paddingRight="3dp"
-            android:paddingTop="3dp"
-            android:paddingBottom="5dp"
-            android:layoutDirection="ltr"
-            android:orientation="horizontal"
-            android:background="#94bade"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <ImageView
-                android:id="@+id/iv_share"
                 android:layout_width="25dp"
                 android:layout_height="25dp"
-                android:layout_marginRight="8dp"
-                android:background="@drawable/favourite" />
-            <TextView
-                android:id="@+id/txt_favouriteCount"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ems="10"
-                android:gravity="left"
-                android:text=""
-                android:paddingLeft="10dp"
-                android:textColor="#ffffff" />
+                android:layout_weight="0"
+                android:src="@drawable/no_name_user" />
         </LinearLayout>
 
-        <LinearLayout
-            android:orientation="vertical"
+        <View
             android:layout_width="match_parent"
-            android:layout_height="match_parent"></LinearLayout>
+            android:layout_height="2dp"
+            android:layout_marginBottom="4dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/round_background_white" />
 
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/txt_tweet"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="start"
+                android:paddingBottom="2dp"
+                android:paddingEnd="5dp"
+                android:paddingStart="5dp"
+                android:text="@string/sample_tweet_text"
+                android:textAlignment="gravity"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:textColor="#ffffff"
+                android:textSize="18sp" />
+
+            <ImageView
+                android:id="@+id/tweet_picture"
+                android:layout_below="@id/txt_tweet"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:layout_marginBottom="1dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:adjustViewBounds="true"
+                android:background="#ffffff"
+                android:scaleType="fitXY"
+                android:src="@drawable/round_background_white" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_below="@id/tweet_picture"
+                android:id="@+id/lol"
+                android:layout_height="2dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/round_background_white" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/lol"
+                android:gravity="start"
+                android:layoutDirection="ltr"
+                android:orientation="horizontal"
+                android:paddingBottom="0dp"
+                android:paddingEnd="3dp"
+                android:paddingStart="0dp"
+                android:paddingTop="0dp">
+
+                <ImageView
+                    android:id="@+id/iv_share"
+                    android:layout_width="80dp"
+                    android:layout_height="75dp"
+                    android:layout_marginTop="0dp"
+                    android:adjustViewBounds="false"
+                    android:background="@drawable/favourite1"
+                    android:cropToPadding="false" />
+
+                <TextView
+                    android:id="@+id/txt_favouriteCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="54dp"
+                    android:ems="10"
+                    android:gravity="start"
+                    android:paddingEnd="10dp"
+                    android:paddingStart="10dp"
+                    android:text="tekst"
+                    android:textColor="#ffffff" />
+            </RelativeLayout>
+        </RelativeLayout>
     </LinearLayout>
+
 </LinearLayout>

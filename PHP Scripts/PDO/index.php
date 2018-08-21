@@ -211,22 +211,21 @@ $app->post('/tweetlist', function (Request $request, Response $response) {
 
 //favourite tweet
 $app->post('/favourite', function (Request $request, Response $response) {
-    if (isTheseParametersAvailable(array('user_id', 'tweet_id', 'op'))) {
+    if (isTheseParametersAvailable(array('user_id', 'tweet_id'))) {
         $requestData = $request->getParsedBody();
         $user_id = $requestData['user_id'];
         $tweet_id = $requestData['tweet_id'];
-	    $op = $requestData['op'];	
 		
         $db = new TweetOperation();
 		
         $responseData = array();
 
-        if ($db->favourite($user_id, $tweet_id, $op)) {
-            $responseData['error'] = false;
-            $responseData['message'] = 'Favourite is updated.';		
+        if ($db->favourite($user_id, $tweet_id)) {
+            $responseData['error'] = true;
+            $responseData['message'] = 'Unfavourite.';		
 		} else {
-			$responseData['error'] = true;
-            $responseData['message'] = 'Favourite could not be updated.';
+			$responseData['error'] = false;
+            $responseData['message'] = 'Favourite.';
 		}
 
         $response->getBody()->write(json_encode($responseData));

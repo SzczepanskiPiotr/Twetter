@@ -10,6 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
@@ -44,7 +45,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-import com.squareup.picasso.Picasso;
+
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -60,6 +61,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import sdp.project.tweeter.R;
 import sdp.project.twitter.API.APIService;
 import sdp.project.twitter.API.APIUrl;
+import sdp.project.twitter.GlideApp;
 import sdp.project.twitter.Result;
 import sdp.project.twitter.SaveSettings;
 import sdp.project.twitter.SearchType;
@@ -535,16 +537,18 @@ public class MainActivity extends AppCompatActivity {
                     }
                     default: {
 
-
+                        ((singleTweetHolder) holder).tweet_picture.setVisibility(View.VISIBLE);
                         ((singleTweetHolder) holder).txtUserName.setText(t.username);
-                        ((singleTweetHolder) holder).txtUserName.setOnClickListener(view -> {
+                        ((singleTweetHolder) holder).txtUserName.setOnClickListener((View view) -> {
                             SelectedUserID = t.user_id;
                             if (SaveSettings.getInstance(getApplicationContext()).getUser().getUserID() != SelectedUserID) {
                                 TweetsType = SearchType.OnePerson;
                                 LoadTweets(0, TweetsType);
                                 txtNameFollowers.setText(t.username);
-                                Picasso.get().load(t.picture_path).into(iv_channel_icon);
+                                //Picasso.get().load(t.picture_path).into(iv_channel_icon);
                                 //Glide.with(getApplicationContext()).load(t.picture_path).into(iv_channel_icon);
+                                GlideApp.with(getApplicationContext()).load(t.picture_path).optionalCenterCrop().into(iv_channel_icon);
+
                                 //TODO: I THINK FOLLOWING STATUS IS ALREADY IN 'tweetlist' REST CALL
                                 //building retrofit object
                                 Retrofit retrofit = new Retrofit.Builder()
@@ -566,6 +570,7 @@ public class MainActivity extends AppCompatActivity {
                                         hideProgressDialog();
                                         if (response.body().getError()) {
                                             buFollow.setText(R.string.buFollow_follow);
+                                            buFollow.setSelected(false);
                                         } else {
                                             buFollow.setText(R.string.buFollow_unFollow);
                                             buFollow.setSelected(true);
@@ -587,21 +592,30 @@ public class MainActivity extends AppCompatActivity {
 
                         ((singleTweetHolder) holder).txt_tweet_date.setText(t.tweet_date);
 
-                        Picasso.get().load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
+                        //Picasso.get().load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
                         //Glide.with(getApplicationContext()).load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
-                        Picasso.get().load(t.picture_path).into(((singleTweetHolder) holder).picture_path);
-                        //Glide.with(getApplicationContext()).load(t.picture_path).into(((singleTweetHolder) holder).picture_path);
+
+                        Log.i("tweetpath",t.tweet_text + " ||| " + t.tweet_picture);
+                        if(t.tweet_picture.equals("none") || t.tweet_picture.equals("null") )
+                            ((singleTweetHolder) holder).tweet_picture.setVisibility(View.GONE);
+                        else
+                            GlideApp.with(getApplicationContext()).load(t.tweet_picture).placeholder(R.drawable.round_background_white).optionalCenterCrop().into(((singleTweetHolder) holder).tweet_picture);
+                            //Picasso.get().load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
+                            //Glide.with(getApplicationContext()).load(t.picture_path).into(((singleTweetHolder) holder).picture_path);
+                            //GlideApp.with(getApplicationContext()).load(t.picture_path).optionalCenterCrop().into(((singleTweetHolder) holder).picture_path);
 
 
                         ((singleTweetHolder) holder).iv_share.setOnClickListener(v -> {
-                            int Operation;
-                            if (((singleTweetHolder) holder).iv_share.getBackground().getConstantState() == getResources().getDrawable(R.drawable.favourite).getConstantState()) {
-                                Operation = 1;
-                                ((singleTweetHolder) holder).iv_share.setBackgroundResource(R.drawable.favourited);
-                            } else {
-                                ((singleTweetHolder) holder).iv_share.setBackgroundResource(R.drawable.favourite);
-                                Operation = 2;
-                            }
+                           // if (((singleTweetHolder) holder).iv_share.getBackground().getConstantState() == getResources().getDrawable(R.drawable.favourite).getConstantState()) {
+                           //     ((singleTweetHolder) holder).iv_share.setBackgroundResource(R.drawable.favourited);
+                           //     t.favouriteCount++;
+                           // } else {
+                           //     ((singleTweetHolder) holder).iv_share.setBackgroundResource(R.drawable.favourite);
+                           //     t.favouriteCount--;
+                          //  }
+                           // t.isFavourite = !t.isFavourite;
+                          //  ((singleTweetHolder) holder).favouriteCount.setText(String.valueOf(t.favouriteCount));
+
                             //Log.i("URL",""+url);
                             //building retrofit object
                             Retrofit retrofit = new Retrofit.Builder()
@@ -613,7 +627,7 @@ public class MainActivity extends AppCompatActivity {
                             APIService service = retrofit.create(APIService.class);
 
                             //defining the call
-                            Call<Result> call = service.favourite(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), t.tweet_id, Operation);
+                            Call<Result> call = service.favourite(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), t.tweet_id);
 
                             //calling the api
                             call.enqueue(new Callback<Result>() {
@@ -621,17 +635,23 @@ public class MainActivity extends AppCompatActivity {
                                 public void onResponse(Call<Result> call, Response<Result> response) {
                                     //hiding progress dialog
                                     hideProgressDialog();
-                                    if (!response.body().getError()) {
-                                        t.isFavourite = !t.isFavourite;
-                                        if (t.isFavourite)
-                                            t.favouriteCount++;
-                                        else
-                                            t.favouriteCount--;
+                                    if (response.body().getError()) {
+                                        GlideApp.with(getApplicationContext()).load(R.drawable.favourite1).into(((singleTweetHolder) holder).iv_share);
+                                        t.isFavourite = false;
+                                        t.favouriteCount--;
                                     }
+                                    else{
+                                        //GlideApp.with(getApplicationContext()).load(R.drawable.favourite22).into(((singleTweetHolder) holder).iv_share);
+                                        ((singleTweetHolder) holder).iv_share.setImageResource(R.drawable.favourite_animation);
+                                        AnimationDrawable favouriteAnimation = (AnimationDrawable)((singleTweetHolder) holder).iv_share.getDrawable();
+                                        favouriteAnimation.start();
+                                        t.isFavourite = true;
+                                        t.favouriteCount++;
+                                    }
+                                    ((singleTweetHolder) holder).favouriteCount.setText(String.valueOf(t.favouriteCount));
                                     //displaying the message from the response as toast
                                     Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
-                                    ((singleTweetHolder) holder).favouriteCount.setText(String.valueOf(t.favouriteCount));
-                                }
+                                }   
 
                                 @Override
                                 public void onFailure(Call<Result> call, Throwable t13) {
@@ -642,9 +662,9 @@ public class MainActivity extends AppCompatActivity {
                         });
 
                         if (!t.isFavourite)
-                            ((singleTweetHolder) holder).iv_share.setBackgroundResource(R.drawable.favourite);
+                            GlideApp.with(getApplicationContext()).load(R.drawable.favourite1).into(((singleTweetHolder) holder).iv_share);
                         else
-                            ((singleTweetHolder) holder).iv_share.setBackgroundResource(R.drawable.favourited);
+                            GlideApp.with(getApplicationContext()).load(R.drawable.favourite22).into(((singleTweetHolder) holder).iv_share);
 
                         ((singleTweetHolder) holder).favouriteCount.setText(String.valueOf(t.favouriteCount));
 
@@ -895,5 +915,5 @@ public class MainActivity extends AppCompatActivity {
         else
             ChannelInfo.setVisibility(View.GONE);
     }
-
 }
+

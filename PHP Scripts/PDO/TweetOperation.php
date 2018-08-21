@@ -136,19 +136,20 @@ class TweetOperation
 	}
 	
 	//Method to favourite tweet
-	function favourite($userId, $tweetId, $op){
-		if($op == 1){//favourite tweet
+	function favourite($userId, $tweetId){
+		
+		$checkStmt = DB::prepare("SELECT * FROM `favourited` WHERE user_id=? AND tweet_id=?");
+		$checkStmt->execute([$userId,$tweetId]);
+		if($checkStmt->rowCount()>0){
+			$stmt = DB::prepare("DELETE FROM favourited WHERE user_id=? AND tweet_id=?");
+			$stmt1 = DB::prepare("UPDATE tweets SET favoruiteCount = favoruiteCount - 1 WHERE tweet_id =?");		
+		}else{
 			$stmt = DB::prepare("INSERT INTO favourited(user_id,tweet_id) VALUES (?, ?)");
 			$stmt1 = DB::prepare("UPDATE tweets SET favoruiteCount = favoruiteCount + 1 WHERE tweet_id =?");
-		}
-		else if($op == 2){//un-favourite tweet
-			$stmt = DB::prepare("DELETE FROM favourited WHERE user_id=? AND tweet_id=?");
-			$stmt1 = DB::prepare("UPDATE tweets SET favoruiteCount = favoruiteCount - 1 WHERE tweet_id =?");
-		}
-		
+		}	
 		$stmt->execute([$userId, $tweetId]);
 		$stmt1->execute([$tweetId]);
-		return $stmt->rowCount()>0;
+		return $checkStmt->rowCount()>0;
 	}
 	
 	//Method that checks if selected tweet is favourite by specific user

@@ -64,7 +64,6 @@ public interface APIService {
     @POST("favourite")
     Call<Result> favourite(
             @Field("user_id") int user_id,
-            @Field("tweet_id") int tweet_id,
-            @Field("op") int op);
+            @Field("tweet_id") int tweet_id);
 
 }

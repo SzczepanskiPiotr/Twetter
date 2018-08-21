@@ -43,7 +43,14 @@ dependencies {
     implementation 'commons-validator:commons-validator:1.6'
     implementation 'com.squareup.retrofit2:retrofit:2.2.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.2.0'
-    implementation 'com.github.bumptech.glide:glide:4.7.1'
+    implementation ("com.github.bumptech.glide:glide:4.7.1") {
+        exclude group: "com.android.support"
+    }
+    implementation "com.android.support:support-fragment:27.1.1"
     annotationProcessor 'com.github.bumptech.glide:compiler:4.7.1'
+    implementation 'pl.droidsonroids.gif:android-gif-drawable:1.2.+'
+    implementation 'jp.wasabeef:glide-transformations:3.3.0'
+    // If you want to use the GPU Filters
+    implementation 'jp.co.cyberagent.android.gpuimage:gpuimage-library:1.4.1'
 }
 apply plugin: 'com.google.gms.google-services'
