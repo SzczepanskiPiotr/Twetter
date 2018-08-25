@@ -25,8 +25,6 @@
         android:layoutDirection="rtl"
         android:orientation="vertical"
         android:paddingBottom="1dp"
-        android:paddingLeft="5dp"
-        android:paddingRight="5dp"
         android:paddingTop="2dp"
         android:textAlignment="center">
 
@@ -38,8 +36,6 @@
             android:layoutDirection="ltr"
             android:orientation="horizontal"
             android:paddingBottom="1dp"
-            android:paddingLeft="3dp"
-            android:paddingRight="3dp"
             android:paddingTop="1dp"
             android:textAlignment="center">
 
@@ -47,11 +43,12 @@
                 android:id="@+id/txt_tweet_date"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
                 android:layout_weight="0"
-                android:background="@drawable/round_background_white"
                 android:padding="2dp"
                 android:text="@string/sample_tweet_date"
                 android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textColor="#f9f9f9"
                 android:textSize="12sp" />
 
             <TextView
@@ -70,11 +67,11 @@
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
-
             <ImageView
                 android:id="@+id/picture_path"
                 android:layout_width="25dp"
                 android:layout_height="25dp"
+                android:layout_marginEnd="5dp"
                 android:layout_weight="0"
                 android:src="@drawable/no_name_user" />
         </LinearLayout>
@@ -94,6 +91,7 @@
                 android:id="@+id/txt_tweet"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
                 android:fontFamily="sans-serif-medium"
                 android:gravity="start"
                 android:paddingBottom="2dp"
@@ -107,60 +105,45 @@
 
             <ImageView
                 android:id="@+id/tweet_picture"
-                android:layout_below="@id/txt_tweet"
                 android:layout_width="match_parent"
                 android:layout_height="100dp"
+                android:layout_below="@id/txt_tweet"
                 android:layout_marginBottom="1dp"
-                android:layout_marginLeft="5dp"
-                android:layout_marginRight="5dp"
                 android:adjustViewBounds="true"
                 android:background="#ffffff"
                 android:scaleType="fitXY"
                 android:src="@drawable/round_background_white" />
 
             <View
-                android:layout_width="match_parent"
-                android:layout_below="@id/tweet_picture"
                 android:id="@+id/lol"
+                android:layout_width="match_parent"
                 android:layout_height="2dp"
+                android:layout_below="@id/tweet_picture"
                 android:layout_marginTop="4dp"
                 android:background="@drawable/round_background_white" />
 
-            <RelativeLayout
-                android:layout_width="match_parent"
+
+            <ImageView
+                android:id="@+id/iv_share"
+                android:layout_width="80dp"
+                android:layout_height="75dp"
+                android:layout_alignParentEnd="true"
+                android:layout_below="@id/tweet_picture"
+                android:background="@drawable/favourite1" />
+
+            <TextView
+                android:id="@+id/txt_favouriteCount"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/lol"
-                android:gravity="start"
-                android:layoutDirection="ltr"
-                android:orientation="horizontal"
-                android:paddingBottom="0dp"
-                android:paddingEnd="3dp"
-                android:paddingStart="0dp"
-                android:paddingTop="0dp">
-
-                <ImageView
-                    android:id="@+id/iv_share"
-                    android:layout_width="80dp"
-                    android:layout_height="75dp"
-                    android:layout_marginTop="0dp"
-                    android:adjustViewBounds="false"
-                    android:background="@drawable/favourite1"
-                    android:cropToPadding="false" />
-
-                <TextView
-                    android:id="@+id/txt_favouriteCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
-                    android:layout_marginStart="54dp"
-                    android:ems="10"
-                    android:gravity="start"
-                    android:paddingEnd="10dp"
-                    android:paddingStart="10dp"
-                    android:text="tekst"
-                    android:textColor="#ffffff" />
-            </RelativeLayout>
+                android:layout_alignParentEnd="true"
+                android:layout_below="@id/tweet_picture"
+                android:layout_marginTop="30dp"
+                android:layout_marginLeft="60dp"
+                android:ems="10"
+                android:paddingEnd="10dp"
+                android:paddingStart="10dp"
+                android:textColor="#ffffff"
+                android:gravity="left"/>
         </RelativeLayout>
     </LinearLayout>
 

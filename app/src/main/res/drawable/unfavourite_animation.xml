@@ -1,7 +1,6 @@
 <animation-list xmlns:android="http://schemas.android.com/apk/res/android" android:oneshot="true">
     <item android:drawable="@drawable/favourite29" android:duration="40"/>
     <item android:drawable="@drawable/favourite29" android:duration="40"/>
-    <item android:drawable="@drawable/favourite29" android:duration="40"/>
     <item android:drawable="@drawable/favourite30" android:duration="40"/>
     <item android:drawable="@drawable/favourite31" android:duration="40"/>
     <item android:drawable="@drawable/favourite32" android:duration="40"/>
@@ -18,9 +17,13 @@
     <item android:drawable="@drawable/favourite43" android:duration="40"/>
     <item android:drawable="@drawable/favourite44" android:duration="40"/>
     <item android:drawable="@drawable/favourite45" android:duration="40"/>
-    <item android:drawable="@drawable/favourite1" android:duration="40"/>
-    <item android:drawable="@drawable/favourite1" android:duration="40"/>
-    <item android:drawable="@drawable/favourite1" android:duration="40"/>
+    <item android:drawable="@drawable/favourite46" android:duration="40"/>
+    <item android:drawable="@drawable/favourite47" android:duration="40"/>
+    <item android:drawable="@drawable/favourite48" android:duration="40"/>
+    <item android:drawable="@drawable/favourite49" android:duration="40"/>
+    <item android:drawable="@drawable/favourite50" android:duration="40"/>
+    <item android:drawable="@drawable/favourite51" android:duration="40"/>
+    <item android:drawable="@drawable/favourite52" android:duration="40"/>
     <item android:drawable="@drawable/favourite1" android:duration="40"/>
     <item android:drawable="@drawable/favourite1" android:duration="40"/>
     <item android:drawable="@drawable/favourite1" android:duration="40"/>
