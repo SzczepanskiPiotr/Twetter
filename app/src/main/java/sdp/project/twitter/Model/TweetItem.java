@@ -1,4 +1,4 @@
-package sdp.project.twitter;
+package sdp.project.twitter.Model;
 
 import com.google.gson.annotations.SerializedName;
 

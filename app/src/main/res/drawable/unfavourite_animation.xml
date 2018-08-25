@@ -1,0 +1,27 @@
+<animation-list xmlns:android="http://schemas.android.com/apk/res/android" android:oneshot="true">
+    <item android:drawable="@drawable/favourite29" android:duration="40"/>
+    <item android:drawable="@drawable/favourite29" android:duration="40"/>
+    <item android:drawable="@drawable/favourite29" android:duration="40"/>
+    <item android:drawable="@drawable/favourite30" android:duration="40"/>
+    <item android:drawable="@drawable/favourite31" android:duration="40"/>
+    <item android:drawable="@drawable/favourite32" android:duration="40"/>
+    <item android:drawable="@drawable/favourite33" android:duration="40"/>
+    <item android:drawable="@drawable/favourite34" android:duration="40"/>
+    <item android:drawable="@drawable/favourite35" android:duration="40"/>
+    <item android:drawable="@drawable/favourite36" android:duration="40"/>
+    <item android:drawable="@drawable/favourite37" android:duration="40"/>
+    <item android:drawable="@drawable/favourite38" android:duration="40"/>
+    <item android:drawable="@drawable/favourite39" android:duration="40"/>
+    <item android:drawable="@drawable/favourite40" android:duration="40"/>
+    <item android:drawable="@drawable/favourite41" android:duration="40"/>
+    <item android:drawable="@drawable/favourite42" android:duration="40"/>
+    <item android:drawable="@drawable/favourite43" android:duration="40"/>
+    <item android:drawable="@drawable/favourite44" android:duration="40"/>
+    <item android:drawable="@drawable/favourite45" android:duration="40"/>
+    <item android:drawable="@drawable/favourite1" android:duration="40"/>
+    <item android:drawable="@drawable/favourite1" android:duration="40"/>
+    <item android:drawable="@drawable/favourite1" android:duration="40"/>
+    <item android:drawable="@drawable/favourite1" android:duration="40"/>
+    <item android:drawable="@drawable/favourite1" android:duration="40"/>
+    <item android:drawable="@drawable/favourite1" android:duration="40"/>
+</animation-list>

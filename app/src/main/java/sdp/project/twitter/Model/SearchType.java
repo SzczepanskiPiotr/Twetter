@@ -1,4 +1,4 @@
-package sdp.project.twitter;
+package sdp.project.twitter.Model;
 
 public class SearchType {
     public static int MyFollowing=1;

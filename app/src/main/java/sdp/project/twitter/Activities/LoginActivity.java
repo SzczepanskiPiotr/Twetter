@@ -21,8 +21,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import sdp.project.tweeter.R;
 import sdp.project.twitter.API.APIService;
 import sdp.project.twitter.API.APIUrl;
-import sdp.project.twitter.Result;
-import sdp.project.twitter.SaveSettings;
+import sdp.project.twitter.API.Result;
+import sdp.project.twitter.Utils.SaveSettings;
 
 public class LoginActivity extends AppCompatActivity {
 

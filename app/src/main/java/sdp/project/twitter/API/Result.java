@@ -1,8 +1,11 @@
-package sdp.project.twitter;
+package sdp.project.twitter.API;
 
 import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
+
+import sdp.project.twitter.Model.TweetItem;
+import sdp.project.twitter.Model.User;
 
 public class Result {
     @SerializedName("error")

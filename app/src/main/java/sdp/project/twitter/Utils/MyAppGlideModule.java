@@ -1,4 +1,4 @@
-package sdp.project.twitter;
+package sdp.project.twitter.Utils;
 
 import com.bumptech.glide.annotation.GlideModule;
 import com.bumptech.glide.module.AppGlideModule;

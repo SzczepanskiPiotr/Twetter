@@ -1,4 +1,4 @@
-package sdp.project.twitter;
+package sdp.project.twitter.Model;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -13,7 +13,7 @@ public class User {
     @SerializedName("picture_path")
     private String Picture_path;
 
-    User(String user_id, String username, String email, String picture_path) {
+    public User(String user_id, String username, String email, String picture_path) {
         this.UserID = user_id;
         this.Username = username;
         this.Email = email;
