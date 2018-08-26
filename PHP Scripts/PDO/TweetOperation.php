@@ -18,7 +18,7 @@ class TweetOperation
 	}
 	
 	//Method to show tweets
-	function tweetList($userId, $startFrom, $query, $op){
+	function tweetList($userId, $startFrom, $query, $op, $check_user_id){
 		if($op == 1){//myFollowingSearch
 		
 			/*$inStmt = DB::prepare("SELECT following_user_id FROM following WHERE user_id=?");
@@ -76,7 +76,7 @@ class TweetOperation
 		else if($op == 2){//searchSpecificPersonPosts
 			$stmt = DB::prepare("SELECT * FROM user_tweets WHERE user_id=? ORDER BY tweet_date DESC". 
 			" LIMIT 20 OFFSET ?");
-			$stmt->bindParam(1,$userId);
+			$stmt->bindParam(1,$check_user_id);
 			$startFrom = (int)$startFrom;
 			$stmt->bindParam(2,$startFrom,PDO::PARAM_INT);
 			$stmt->execute();	

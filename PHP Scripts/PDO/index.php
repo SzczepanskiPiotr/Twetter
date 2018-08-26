@@ -185,21 +185,22 @@ $app->post('/tweetadd', function (Request $request, Response $response) {
 
 //find specific tweets (following/user/tweetText)
 $app->post('/tweetlist', function (Request $request, Response $response) {
-    if (isTheseParametersAvailable(array('user_id', 'startFrom', 'query', 'op'))) {
+    if (isTheseParametersAvailable(array('user_id', 'startFrom', 'query', 'op', 'check_user_id'))) {
         $requestData = $request->getParsedBody();
         $user_id = $requestData['user_id'];
         $startFrom = $requestData['startFrom'];
         $query = $requestData['query'];
 	    $op = $requestData['op'];	
+		$check_user_id = $requestData['check_user_id'];
 		
         $db = new TweetOperation();
 		
         $responseData = array();
 
-        if ($db->tweetList($user_id, $startFrom, $query, $op)) {
+        if ($db->tweetList($user_id, $startFrom, $query, $op, $check_user_id)) {
             $responseData['error'] = false;
             $responseData['message'] = 'Has tweets.';		
-            $responseData['tweets'] = $db->tweetList($user_id, $startFrom, $query, $op);
+            $responseData['tweets'] = $db->tweetList($user_id, $startFrom, $query, $op, $check_user_id);
 			
 		} else {
 			$responseData['error'] = true;

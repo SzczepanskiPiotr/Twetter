@@ -244,6 +244,7 @@ public class MainActivity extends AppCompatActivity {
             Operation = 2;
             buFollow.setText(R.string.buFollow_follow);
         }
+        showProgressDialog();
         //building retrofit object
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(APIUrl.BASE_URL)
@@ -874,9 +875,6 @@ public class MainActivity extends AppCompatActivity {
 
         myTweetWall.notifyDataSetChanged();
 
-        if (TweetType == SearchType.OnePerson)
-            user_id = SelectedUserID;
-
         //building retrofit object
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(APIUrl.BASE_URL)
@@ -887,8 +885,8 @@ public class MainActivity extends AppCompatActivity {
         APIService service = retrofit.create(APIService.class);
 
         //defining the call
-        Log.i("TEST: ", "USER ID: " + user_id + " STARTFROM: " + StartFrom + " QUERY: " + Query + " TWEETTYPE: " + TweetType);
-        Call<Result> call = service.tweetList(user_id, StartFrom, Query, TweetType);
+        Log.i("TEST: ", "USER ID: " + user_id + " STARTFROM: " + StartFrom + " QUERY: " + Query + " TWEETTYPE: " + TweetType + " CHECK USER ID: " + SelectedUserID);
+        Call<Result> call = service.tweetList(user_id, StartFrom, Query, TweetType, SelectedUserID);
 
         //calling the api
         call.enqueue(new Callback<Result>() {

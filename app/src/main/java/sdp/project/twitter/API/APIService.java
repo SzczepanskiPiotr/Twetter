@@ -55,7 +55,8 @@ public interface APIService {
             @Field("user_id") int user_id,
             @Field("startFrom") int startFrom,
             @Field("query") String query,
-            @Field("op") int op);
+            @Field("op") int op,
+            @Field("check_user_id") int check_user_id);
 
 
     //Add new tweet call
