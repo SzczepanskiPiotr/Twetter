@@ -22,7 +22,12 @@
         </activity>
         <activity android:name="sdp.project.twitter.Activities.LoginActivity"></activity>
         <activity android:name="sdp.project.twitter.Activities.RegisterActivity"></activity>
-
+        <service
+            android:name="sdp.project.twitter.Utils.MyFirebaseMessagingService">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
     </application>
 
 

@@ -40,8 +40,8 @@ import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.iid.FirebaseInstanceId;
+
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -70,6 +70,7 @@ import sdp.project.twitter.Model.TweetItem;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TAG = "MainActivity";
     int StartFrom = 0;
     int TweetsType = SearchType.MyFollowing;
     boolean LoadMore = false;
@@ -83,27 +84,11 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<TweetItem> tweetWall;
     TweetWall myTweetWall;
 
-    //firebase
-    private static final String TAG = "AnonymousAuth";
-    private FirebaseAuth mAuth;
-    private FirebaseAuth.AuthStateListener mAuthListener;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mAuth = FirebaseAuth.getInstance();
-        mAuthListener = firebaseAuth -> {
-            FirebaseUser user = firebaseAuth.getCurrentUser();
-            if (user != null) {
-                // User is signed in
-                Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
-            } else {
-                // User is signed out
-                Log.d(TAG, "onAuthStateChanged:signed_out");
-            }
-        };
 
         //Info of other users, hidden on main screen
         ChannelInfo = findViewById(R.id.ChannelInfo);
@@ -118,7 +103,22 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(getApplicationContext(), LoginActivity.class));
             return;
         }
-        Log.i("MAINACTIVITY: ", "LOGGING IN USER");
+        //FirebaseInstanceId.getInstance().getCreationTime();
+        FirebaseInstanceId.getInstance().getInstanceId().addOnCompleteListener(task -> {
+            if (!task.isSuccessful()) {
+                Log.w("WELL", "getInstanceId failed", task.getException());
+                return;
+            }
+
+            // Get new Instance ID token
+            String token = task.getResult().getToken();
+
+            // Log and toast
+            //String msg = getString(R.string.msg_token_fmt, token);
+            Log.d("WELL", token);
+            //Toast.makeText(MainActivity.this, token, Toast.LENGTH_SHORT).show();
+        });
+        Log.i( TAG, "LOGGING IN USER");
 
         tweetWall = new ArrayList<>();
         myTweetWall = new TweetWall(tweetWall,this);
@@ -144,16 +144,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onStart() {
         super.onStart();
-        mAuth.addAuthStateListener(mAuthListener);
-        signInAnonymously();
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        if (mAuthListener != null) {
-            mAuth.removeAuthStateListener(mAuthListener);
-        }
         hideProgressDialog();
     }
 
@@ -162,19 +157,9 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-    private void signInAnonymously() {
-        mAuth.signInAnonymously().addOnCompleteListener(this, task -> {
-            Log.d(TAG, "signInAnonymously:onComplete:" + task.isSuccessful());
-            if (!task.isSuccessful()) {
-                Log.w(TAG, "signInAnonymously", task.getException());
-            }
-        });
-    }
-
     SearchView searchView;
     Menu myMenu;
     String Query = "null";
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -284,7 +269,6 @@ public class MainActivity extends AppCompatActivity {
 
         ArrayList<TweetItem> tweetWallAdapter;
         Context context;
-
 
         public class addTweetViewHolder extends RecyclerView.ViewHolder{
 
@@ -530,7 +514,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     case "loading": {
-                        Log.i("I","TWEETLOADING");
+                        Log.i(TAG,"TWEETLOADING");
                         break;
                     }
                     case "notweet": {
@@ -662,7 +646,7 @@ public class MainActivity extends AppCompatActivity {
 
                                 @Override
                                 public void onResponse(Call<Result> call, Response<Result> response) {
-                                    Log.i("lol","restcall");
+                                    Log.i(TAG,"restcall");
                                     //hiding progress dialog
                                     hideProgressDialog();
                                     /*if (response.body().getError()) {
@@ -814,7 +798,7 @@ public class MainActivity extends AppCompatActivity {
             float actualHeight = b.getHeight();
             float imgRatio = (actualWidth / actualHeight);
             float maxRatio = maxWidth / maxHeight;
-            Log.i("IMG", "ACT_WIDTH:"+actualWidth+"ACT_HEIGHT:"+actualHeight+"IMG_RATIO"+imgRatio);
+            Log.i(TAG, "ACT_WIDTH:"+actualWidth+"ACT_HEIGHT:"+actualHeight+"IMG_RATIO"+imgRatio);
 
             //      width and height values are set maintaining the aspect ratio of the image
             if (actualHeight > maxHeight || actualWidth > maxWidth) {
@@ -828,7 +812,7 @@ public class MainActivity extends AppCompatActivity {
                     actualWidth = maxWidth;
                 }
             }
-            Log.i("IMG", "NEW_WIDTH:"+Math.round(actualWidth)+"NEW_HEIGHT:"+Math.round(actualHeight)+"IMG_RATIO"+imgRatio+"ROTATION:"+getExifRotation(picturePath));
+            Log.i(TAG, "NEW_WIDTH:"+Math.round(actualWidth)+"NEW_HEIGHT:"+Math.round(actualHeight)+"IMG_RATIO"+imgRatio+"ROTATION:"+getExifRotation(picturePath));
 
             //iv_temp.setImageBitmap(Bitmap.createScaledBitmap(b,Math.round(actualWidth),Math.round(actualHeight),false));
             //iv_temp.setVisibility(ImageView.VISIBLE);
@@ -861,7 +845,7 @@ public class MainActivity extends AppCompatActivity {
     void LoadTweets(int StartFrom, int TweetType) {
         //setTitle(SaveSettings.getInstance(getApplicationContext()).getUser().getUsername());
         //getActionBar().setTitle(SaveSettings.getInstance(getApplicationContext()).getUser().getUsername());
-        Log.i("MAINACTIVITY: ", "LOADING TWEETS");
+        Log.i( TAG, "LOADING TWEETS");
         int user_id = SaveSettings.getInstance(getApplicationContext()).getUser().getUserID();
         this.StartFrom = StartFrom;
         this.TweetsType = TweetType;
@@ -885,7 +869,7 @@ public class MainActivity extends AppCompatActivity {
         APIService service = retrofit.create(APIService.class);
 
         //defining the call
-        Log.i("TEST: ", "USER ID: " + user_id + " STARTFROM: " + StartFrom + " QUERY: " + Query + " TWEETTYPE: " + TweetType + " CHECK USER ID: " + SelectedUserID);
+        Log.i(TAG, "USER ID: " + user_id + " STARTFROM: " + StartFrom + " QUERY: " + Query + " TWEETTYPE: " + TweetType + " CHECK USER ID: " + SelectedUserID);
         Call<Result> call = service.tweetList(user_id, StartFrom, Query, TweetType, SelectedUserID);
 
         //calling the api

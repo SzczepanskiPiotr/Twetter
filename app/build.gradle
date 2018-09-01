@@ -27,6 +27,7 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'com.google.firebase:firebase-messaging:17.3.0'
     androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
@@ -35,15 +36,15 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     //noinspection GradleCompatible
     implementation 'com.android.support:recyclerview-v7:27.1.1'
-    implementation 'com.google.firebase:firebase-core:16.0.1'
+    implementation 'com.google.firebase:firebase-core:16.0.3'
     implementation 'com.google.firebase:firebase-storage:16.0.1'
-    implementation 'com.google.firebase:firebase-auth:16.0.2'
+    implementation 'com.google.firebase:firebase-auth:16.0.3'
     implementation 'com.android.support.constraint:constraint-layout:1.1.2'
     implementation 'com.squareup.picasso:picasso:2.71828'
     implementation 'commons-validator:commons-validator:1.6'
     implementation 'com.squareup.retrofit2:retrofit:2.2.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.2.0'
-    implementation ("com.github.bumptech.glide:glide:4.7.1") {
+    implementation("com.github.bumptech.glide:glide:4.7.1") {
         exclude group: "com.android.support"
     }
     implementation "com.android.support:support-fragment:27.1.1"

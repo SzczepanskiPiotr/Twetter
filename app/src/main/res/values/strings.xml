@@ -31,8 +31,7 @@
     <!-- TWEET LIST INFO -->
     <string name="noTweets">No more stories</string>
     <string name="moreTweets">Load more</string>
-
-
+    <string name="default_notification_channel_id">You have new tweets!</string>
 
 
 </resources>
