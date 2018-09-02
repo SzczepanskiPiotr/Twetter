@@ -40,6 +40,8 @@ import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.iid.FirebaseInstanceId;
 
 import com.google.firebase.storage.FirebaseStorage;
@@ -84,11 +86,13 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<TweetItem> tweetWall;
     TweetWall myTweetWall;
 
+    private FirebaseAuth mAuth;
+    private FirebaseAuth.AuthStateListener mAuthListener;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
 
         //Info of other users, hidden on main screen
         ChannelInfo = findViewById(R.id.ChannelInfo);
@@ -103,10 +107,27 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(getApplicationContext(), LoginActivity.class));
             return;
         }
-        //FirebaseInstanceId.getInstance().getCreationTime();
+
+        mAuth = FirebaseAuth.getInstance();
+        mAuthListener = firebaseAuth -> {
+                FirebaseUser user = firebaseAuth.getCurrentUser();
+                if (user != null) {
+                    // User is signed in
+                    Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
+                } else {
+                    // User is signed out
+                    Log.d(TAG, "onAuthStateChanged:signed_out");
+                }
+        };
+        mAuth.signInAnonymously().addOnCompleteListener(this, task -> {
+            Log.d(TAG, "signInAnonymously:onComplete:" + task.isSuccessful());
+            if(!task.isSuccessful()){
+                Log.w(TAG, "signInAnonymously", task.getException());
+            }
+        });
         FirebaseInstanceId.getInstance().getInstanceId().addOnCompleteListener(task -> {
             if (!task.isSuccessful()) {
-                Log.w("WELL", "getInstanceId failed", task.getException());
+                Log.w(TAG, "getInstanceId failed", task.getException());
                 return;
             }
 
@@ -115,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
 
             // Log and toast
             //String msg = getString(R.string.msg_token_fmt, token);
-            Log.d("WELL", token);
+            Log.d(TAG, token);
             //Toast.makeText(MainActivity.this, token, Toast.LENGTH_SHORT).show();
         });
         Log.i( TAG, "LOGGING IN USER");
@@ -144,11 +165,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onStart() {
         super.onStart();
+        mAuth.addAuthStateListener(mAuthListener);
     }
 
     @Override
     public void onStop() {
         super.onStop();
+        if(mAuthListener != null){
+            mAuth.removeAuthStateListener(mAuthListener);
+        }
         hideProgressDialog();
     }
 
@@ -260,8 +285,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    //TextView etCounter;
-    String downloadUrl = "none";
     Boolean loadedImage = false;
     Bitmap loadImageBitmap = null;
 
@@ -382,7 +405,9 @@ public class MainActivity extends AppCompatActivity {
 
                         if (loadedImage) {
                             ((addTweetViewHolder) holder).iv_temp.setImageBitmap(loadImageBitmap);
-                            ((addTweetViewHolder) holder).iv_temp.setVisibility(ImageView.VISIBLE);
+                        }else{
+                            ((addTweetViewHolder) holder).iv_temp.setImageBitmap(loadImageBitmap);
+                            ((addTweetViewHolder) holder).iv_temp.setVisibility(ImageView.INVISIBLE);
                         }
                         ((addTweetViewHolder) holder).iv_attach.setOnClickListener(view -> CheckUserPermission());
                         ((addTweetViewHolder) holder).iv_post.setOnClickListener(view -> {
@@ -413,7 +438,7 @@ public class MainActivity extends AppCompatActivity {
                                     uploadTask.addOnFailureListener(e -> Toast.makeText(MainActivity.this, "Image could not be uploaded: " + e.getMessage(), Toast.LENGTH_LONG).show())
                                             .addOnSuccessListener(taskSnapshot -> picRef.getDownloadUrl().
                                                     addOnSuccessListener(uri -> {
-                                                        downloadUrl = uri.toString();
+                                                        String downloadUrl = uri.toString();
                                                         hideProgressDialog();
                                                         Toast.makeText(context, "Tweet added", Toast.LENGTH_SHORT).show();
                                                         //building retrofit object
@@ -439,7 +464,6 @@ public class MainActivity extends AppCompatActivity {
                                                                 ((addTweetViewHolder) holder).etPost.setText("");
                                                                 loadedImage = false;
                                                                 loadImageBitmap = null;
-                                                                downloadUrl = "none";
                                                                 TweetsType = SearchType.MyFollowing;
                                                                 LoadTweets(0, TweetsType);
                                                             }
@@ -462,7 +486,7 @@ public class MainActivity extends AppCompatActivity {
                                     APIService service = retrofit.create(APIService.class);
 
                                     //defining the call
-                                    Call<Result> call = service.tweetAdd(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), ((addTweetViewHolder) holder).etPost.getText().toString(), downloadUrl);
+                                    Call<Result> call = service.tweetAdd(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), ((addTweetViewHolder) holder).etPost.getText().toString(), "none");
 
                                     //calling the api
                                     call.enqueue(new Callback<Result>() {
@@ -474,7 +498,6 @@ public class MainActivity extends AppCompatActivity {
                                             Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
                                             ((addTweetViewHolder) holder).etPost.setText("");
                                             loadedImage = false;
-                                            downloadUrl = "none";
                                             loadImageBitmap = null;
                                             TweetsType = SearchType.MyFollowing;
                                             LoadTweets(0, TweetsType);
@@ -723,6 +746,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     void CheckUserPermission() {
+        Log.i(TAG, "Requesting permission");
         if (Build.VERSION.SDK_INT >= 23) {
             if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE) !=
                     PackageManager.PERMISSION_GRANTED) {
@@ -742,6 +766,7 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case REQUEST_CODE_ASK_PERMISSIONS:
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.i(TAG, "Permission granted");
                     LoadImage();
                 } else {
                     Toast.makeText(this, "your message", Toast.LENGTH_SHORT).show();
@@ -818,6 +843,7 @@ public class MainActivity extends AppCompatActivity {
             //iv_temp.setVisibility(ImageView.VISIBLE);
             loadedImage = true;
             loadImageBitmap = Bitmap.createScaledBitmap(b,Math.round(actualWidth),Math.round(actualHeight),false);
+            myTweetWall.notifyItemChanged(0);
         }
     }
 

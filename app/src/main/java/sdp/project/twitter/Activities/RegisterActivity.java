@@ -52,7 +52,7 @@ public class RegisterActivity extends AppCompatActivity {
     ImageView ivUserImage;
 
     //firebase
-    private static final String TAG = "AnonymousAuth";
+    private static final String TAG = "RegisterActivity";
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
 
