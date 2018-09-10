@@ -24,11 +24,18 @@ package sdp.project.twitter.Utils;
         import android.media.RingtoneManager;
         import android.net.Uri;
         import android.os.Build;
+        import android.support.annotation.NonNull;
         import android.support.v4.app.NotificationCompat;
         import android.util.Log;
 
+        import com.google.android.gms.tasks.OnCompleteListener;
+        import com.google.android.gms.tasks.Task;
+        import com.google.firebase.iid.FirebaseInstanceId;
+        import com.google.firebase.iid.InstanceIdResult;
         import com.google.firebase.messaging.FirebaseMessagingService;
         import com.google.firebase.messaging.RemoteMessage;
+
+        import java.io.IOException;
 
         import sdp.project.tweeter.R;
         import sdp.project.twitter.Activities.MainActivity;
@@ -88,7 +95,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     }
     // [END on_new_token]
 
-
     /**
      * Handle time allotted to BroadcastReceivers.
      */
@@ -106,6 +112,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
      */
     private void sendRegistrationToServer(String token) {
         // TODO: Implement this method to send token to your app server.
+        //SaveSettings.getInstance(this.getApplicationContext()).storeToken(token);
     }
 
     /**

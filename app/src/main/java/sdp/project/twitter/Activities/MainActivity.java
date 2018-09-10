@@ -44,6 +44,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.iid.FirebaseInstanceId;
 
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -73,6 +75,7 @@ import sdp.project.twitter.Model.TweetItem;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
+
     int StartFrom = 0;
     int TweetsType = SearchType.MyFollowing;
     boolean LoadMore = false;
@@ -125,20 +128,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.w(TAG, "signInAnonymously", task.getException());
             }
         });
-        FirebaseInstanceId.getInstance().getInstanceId().addOnCompleteListener(task -> {
-            if (!task.isSuccessful()) {
-                Log.w(TAG, "getInstanceId failed", task.getException());
-                return;
-            }
 
-            // Get new Instance ID token
-            String token = task.getResult().getToken();
-
-            // Log and toast
-            //String msg = getString(R.string.msg_token_fmt, token);
-            Log.d(TAG, token);
-            //Toast.makeText(MainActivity.this, token, Toast.LENGTH_SHORT).show();
-        });
         Log.i( TAG, "LOGGING IN USER");
 
         tweetWall = new ArrayList<>();

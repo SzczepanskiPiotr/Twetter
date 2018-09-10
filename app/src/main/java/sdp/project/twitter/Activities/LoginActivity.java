@@ -10,6 +10,10 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
+
 import java.io.UnsupportedEncodingException;
 
 
@@ -38,9 +42,15 @@ public class LoginActivity extends AppCompatActivity {
         etPassword = findViewById(R.id.etPassword);
         TextView goToRegister = findViewById(R.id.goToRegister);
         goToRegister.setOnClickListener(v -> {
-            Intent i = new Intent(getApplicationContext(),RegisterActivity.class);
+            Intent i = new Intent(getApplicationContext(), RegisterActivity.class);
             startActivity(i);
         });
+
+        FirebaseInstanceId.getInstance().getInstanceId().addOnSuccessListener(instanceIdResult -> {
+            String token = instanceIdResult.getToken();
+            SaveSettings.getInstance(getApplicationContext()).storeToken(token);
+        });
+
     }
 
     @VisibleForTesting
@@ -63,51 +73,52 @@ public class LoginActivity extends AppCompatActivity {
 
     public void buLogin(View view) {
         showProgressDialog();
-        String name="";
+        String name = "";
         try {
             //for space with name
-            name = java.net.URLEncoder.encode( etName.getText().toString() , "UTF-8");
+            name = java.net.URLEncoder.encode(etName.getText().toString(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
 
         }
-        if(etName.getText().toString().equals("") || etPassword.getText().toString().equals("")){
+        if (etName.getText().toString().equals("") || etPassword.getText().toString().equals("")) {
             hideProgressDialog();
-            Toast.makeText( getApplicationContext(),"One of the fields is empty!" , Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "One of the fields is empty!", Toast.LENGTH_SHORT).show();
 
-        }else{
-                //building retrofit object
-                Retrofit retrofit = new Retrofit.Builder()
-                        .baseUrl(APIUrl.BASE_URL)
-                        .addConverterFactory(GsonConverterFactory.create())
-                        .build();
+        } else {
+            //building retrofit object
+            Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl(APIUrl.BASE_URL)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
 
-                //Defining retrofit api service
-                APIService service = retrofit.create(APIService.class);
+            //Defining retrofit api service
+            APIService service = retrofit.create(APIService.class);
 
-                //defining the call
-                Call<Result> call = service.loginUser(name, etPassword.getText().toString());
 
-                //calling the api
-                call.enqueue(new Callback<Result>() {
-                    @Override
-                    public void onResponse(Call<Result> call, Response<Result> response) {
-                        //hiding progress dialog
-                        hideProgressDialog();
-                        Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
-                        if(!response.body().getError()){
-                            SaveSettings.getInstance(getApplicationContext()).userLogin(response.body().getUser());
-                            finish();
-                            startActivity(new Intent(getApplicationContext(), MainActivity.class));
-                        }
-                        //displaying the message from the response as toast
+            //defining the call
+            Call<Result> call = service.loginUser(name, etPassword.getText().toString(), SaveSettings.getInstance(getApplicationContext()).getToken());
+
+            //calling the api
+            call.enqueue(new Callback<Result>() {
+                @Override
+                public void onResponse(Call<Result> call, Response<Result> response) {
+                    //hiding progress dialog
+                    hideProgressDialog();
+                    Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
+                    if (!response.body().getError()) {
+                        SaveSettings.getInstance(getApplicationContext()).userLogin(response.body().getUser());
+                        finish();
+                        startActivity(new Intent(getApplicationContext(), MainActivity.class));
                     }
+                    //displaying the message from the response as toast
+                }
 
-                    @Override
-                    public void onFailure(Call<Result> call, Throwable t) {
-                        hideProgressDialog();
-                        Toast.makeText(getApplicationContext(), t.getMessage(), Toast.LENGTH_LONG).show();
-                    }
-                });
+                @Override
+                public void onFailure(Call<Result> call, Throwable t) {
+                    hideProgressDialog();
+                    Toast.makeText(getApplicationContext(), t.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            });
         }
     }
 }

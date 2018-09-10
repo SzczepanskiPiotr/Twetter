@@ -50,16 +50,18 @@ $app->post('/register', function (Request $request, Response $response) {
 
 //user login route
 $app->post('/login', function (Request $request, Response $response) {
-    if (isTheseParametersAvailable(array('username', 'password'))) {
+    if (isTheseParametersAvailable(array('username', 'password', 'token'))) {
         $requestData = $request->getParsedBody();
         $username = $requestData['username'];
         $password = $requestData['password'];
-
+        $token = $requestData['token'];
+		
         $db = new UserOperation();
 
         $responseData = array();
 
         if ($db->userLogin($username, $password)) {
+			$responseData['token'] = $db->manageToken($username, $token);
             $responseData['error'] = false;
 			$responseData['message'] = 'Logging in';
 			$responseData['user'] = $db->getUserByUsername($username);
@@ -72,6 +74,7 @@ $app->post('/login', function (Request $request, Response $response) {
         $response->getBody()->write(json_encode($responseData));
     }
 });
+
 /*
 //getting all users
 $app->get('/users', function (Request $request, Response $response) {
@@ -196,11 +199,13 @@ $app->post('/tweetlist', function (Request $request, Response $response) {
         $db = new TweetOperation();
 		
         $responseData = array();
+		
+		$tweetList = $db->tweetList($user_id, $startFrom, $query, $op, $check_user_id);
 
-        if ($db->tweetList($user_id, $startFrom, $query, $op, $check_user_id)) {
+        if ($tweetList) {
             $responseData['error'] = false;
             $responseData['message'] = 'Has tweets.';		
-            $responseData['tweets'] = $db->tweetList($user_id, $startFrom, $query, $op, $check_user_id);
+            $responseData['tweets'] = $tweetList;
 			
 		} else {
 			$responseData['error'] = true;
@@ -232,7 +237,6 @@ $app->post('/favourite', function (Request $request, Response $response) {
         $response->getBody()->write(json_encode($responseData));
     }
 });
-
 
 //function to check parameters
 function isTheseParametersAvailable($required_fields)

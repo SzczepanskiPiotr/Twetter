@@ -32,6 +32,28 @@ class UserOperation
         //$stmt->store_result();
         return $stmt->fetch();
     }
+	
+	function manageToken($username, $token)
+	{
+		$stmt = DB::prepare("SELECT username FROM tokens WHERE token = ?");
+        $stmt->execute([$token]);
+		$result = $stmt->fetch();
+		if($result){
+			if($result['username'] == $username){
+				return TOKEN_OK;
+			}
+			else{
+				$stmt1 = DB::prepare("UPDATE tokens SET username = ? WHERE token = ?");
+				$stmt1->execute([$username, $token]);
+				return TOKEN_REPLACED;
+			}
+		}
+		else{
+				$stmt2 = DB::prepare("INSERT INTO tokens(username, token) VALUES (?,?)");
+				$stmt2->execute([$username, $token]);
+				return TOKEN_NEW;
+		}
+	}
  
  /*
     //Method to update profile of user
