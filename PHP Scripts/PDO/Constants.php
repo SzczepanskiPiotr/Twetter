@@ -7,3 +7,6 @@ define('USER_CREATION_FAILED', 103);
 define('TOKEN_OK', 104);
 define('TOKEN_REPLACED', 105);
 define('TOKEN_NEW', 106);
+
+?>
+

@@ -68,6 +68,7 @@ import sdp.project.twitter.API.APIUrl;
 import sdp.project.twitter.Utils.CustomAnimationDrawable;
 import sdp.project.twitter.Utils.GlideApp;
 import sdp.project.twitter.API.Result;
+import sdp.project.twitter.Utils.MyFirebaseMessagingService;
 import sdp.project.twitter.Utils.SaveSettings;
 import sdp.project.twitter.Model.SearchType;
 import sdp.project.twitter.Model.TweetItem;
@@ -569,7 +570,9 @@ public class MainActivity extends AppCompatActivity {
                                         if (response.body().getError()) {
                                             buFollow.setText(R.string.buFollow_follow);
                                             buFollow.setSelected(false);
+                                            FirebaseMessaging.getInstance().unsubscribeFromTopic(String.valueOf(SelectedUserID));
                                         } else {
+                                            FirebaseMessaging.getInstance().subscribeToTopic(String.valueOf(SelectedUserID));
                                             buFollow.setText(R.string.buFollow_unFollow);
                                             buFollow.setSelected(true);
                                         }

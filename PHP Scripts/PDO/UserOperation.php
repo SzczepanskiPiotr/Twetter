@@ -33,24 +33,24 @@ class UserOperation
         return $stmt->fetch();
     }
 	
-	function manageToken($username, $token)
+	function manageToken($user_id, $token)
 	{
-		$stmt = DB::prepare("SELECT username FROM tokens WHERE token = ?");
+		$stmt = DB::prepare("SELECT user_id FROM tokens WHERE token = ?");
         $stmt->execute([$token]);
 		$result = $stmt->fetch();
 		if($result){
-			if($result['username'] == $username){
+			if($result['user_id'] == $user_id){
 				return TOKEN_OK;
 			}
 			else{
-				$stmt1 = DB::prepare("UPDATE tokens SET username = ? WHERE token = ?");
-				$stmt1->execute([$username, $token]);
+				$stmt1 = DB::prepare("UPDATE tokens SET user_id = ? WHERE token = ?");
+				$stmt1->execute([$user_id, $token]);
 				return TOKEN_REPLACED;
 			}
 		}
 		else{
-				$stmt2 = DB::prepare("INSERT INTO tokens(username, token) VALUES (?,?)");
-				$stmt2->execute([$username, $token]);
+				$stmt2 = DB::prepare("INSERT INTO tokens(user_id, token) VALUES (?,?)");
+				$stmt2->execute([$user_id, $token]);
 				return TOKEN_NEW;
 		}
 	}

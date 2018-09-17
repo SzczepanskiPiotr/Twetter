@@ -44,3 +44,4 @@ class DB
         return $stmt;
     }
 }
+?>

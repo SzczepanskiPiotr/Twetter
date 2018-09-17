@@ -61,11 +61,11 @@ $app->post('/login', function (Request $request, Response $response) {
         $responseData = array();
 
         if ($db->userLogin($username, $password)) {
-			$responseData['token'] = $db->manageToken($username, $token);
+			$user = $db->getUserByUsername($username);
             $responseData['error'] = false;
 			$responseData['message'] = 'Logging in';
-			$responseData['user'] = $db->getUserByUsername($username);
-
+			$responseData['user'] = $user;
+			$responseData['token'] = $db->manageToken($user['user_id'], $token);
         } else {
             $responseData['error'] = true;
             $responseData['message'] = 'Invalid username or password';
