@@ -34,12 +34,18 @@ public interface APIService {
             @Field("followUser_id")     int followUserId,
             @Field("op")                int op);
 
-    //Add new tweet call
+    //Check specific user following call
     @FormUrlEncoded
     @POST("checkfollowing")
     Call<Result> checkFollowing(
             @Field("user_id")           int user_id,
             @Field("followUser_id")     int followUser_id);
+
+    //Call to get all following
+    @FormUrlEncoded
+    @POST("getallfollowing")
+    Call<Result> getAllFollowing(
+            @Field("user_id")           int user_id);
 
     //Add new tweet call
     @FormUrlEncoded
@@ -49,7 +55,7 @@ public interface APIService {
             @Field("tweet_text")        String tweet_text,
             @Field("tweet_picture")     String tweet_picture);
 
-    //Add new tweet call
+    //Tweet list for user call
     @FormUrlEncoded
     @POST("tweetlist")
     Call<Result> tweetList(
@@ -60,7 +66,7 @@ public interface APIService {
             @Field("check_user_id")     int check_user_id);
 
 
-    //Add new tweet call
+    //Favourite a tweet call
     @FormUrlEncoded
     @POST("favourite")
     Call<Result> favourite(

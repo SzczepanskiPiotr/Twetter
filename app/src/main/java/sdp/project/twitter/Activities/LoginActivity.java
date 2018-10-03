@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.support.annotation.VisibleForTesting;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -27,6 +28,8 @@ import sdp.project.twitter.API.APIService;
 import sdp.project.twitter.API.APIUrl;
 import sdp.project.twitter.API.Result;
 import sdp.project.twitter.Utils.SaveSettings;
+
+import static java.lang.System.in;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -107,6 +110,10 @@ public class LoginActivity extends AppCompatActivity {
                     Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
                     if (!response.body().getError()) {
                         SaveSettings.getInstance(getApplicationContext()).userLogin(response.body().getUser());
+                        for(int i : response.body().getFollowing())
+                        {
+                            Log.i("TAGLOGIN",i+"");
+                        }
                         finish();
                         startActivity(new Intent(getApplicationContext(), MainActivity.class));
                     }

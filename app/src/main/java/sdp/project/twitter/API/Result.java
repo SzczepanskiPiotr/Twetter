@@ -20,12 +20,17 @@ public class Result {
     @SerializedName("tweets")
     private ArrayList<TweetItem> t;
 
+    @SerializedName("following")
+    private ArrayList<Integer> f;
 
-    public Result(Boolean error, String message, User user, ArrayList<TweetItem> t) {
+
+
+    public Result(Boolean error, String message, User user, ArrayList<TweetItem> t, ArrayList<Integer> f) {
         this.error = error;
         this.message = message;
         this.user = user;
         this.t = t;
+        this.f = f;
     }
 
     public Boolean getError() {
@@ -43,4 +48,6 @@ public class Result {
     public ArrayList<TweetItem> getTweets() {
         return t;
     }
+
+    public ArrayList<Integer> getFollowing() { return f; }
 }

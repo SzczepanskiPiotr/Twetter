@@ -86,6 +86,18 @@ class UserOperation
 		return $stmt->fetch();
 	}
 	
+	function getAllFollowing($user_id){
+		$stmt = DB::prepare("SELECT following_user_id FROM following WHERE user_id=?");
+		$stmt->execute([$user_id]);
+        /*$followers = array();
+        while($id = $stmt->fetchColumn()){
+            array_push($followers, $id);
+        }
+        return $followers;
+		*/
+		return $stmt->fetchAll(PDO::FETCH_COLUMN);
+	}
+	
 	//Method to get user by email
     function getUserByEmail($email)
     {

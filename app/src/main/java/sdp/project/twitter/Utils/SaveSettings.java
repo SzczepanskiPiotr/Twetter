@@ -58,6 +58,8 @@ public class SaveSettings {
         editor.putString(SETTINGS_EMAIL, user.getEmail());
         editor.putString(SETTINGS_PICTUREPATH, user.getPicture_path());
         editor.apply();
+
+
         return true;
     }
 

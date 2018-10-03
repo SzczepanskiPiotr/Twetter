@@ -66,6 +66,7 @@ $app->post('/login', function (Request $request, Response $response) {
 			$responseData['message'] = 'Logging in';
 			$responseData['user'] = $user;
 			$responseData['token'] = $db->manageToken($user['user_id'], $token);
+			$responseData['following'] = $db->getAllFollowing($user['user_id']);
         } else {
             $responseData['error'] = true;
             $responseData['message'] = 'Invalid username or password';
@@ -161,6 +162,33 @@ $app->post('/checkfollowing', function (Request $request, Response $response) {
         $response->getBody()->write(json_encode($responseData));
     }
 });
+
+//retrieving all users that a person is following
+$app->post('/getallfollowing', function (Request $request, Response $response) {
+    if (isTheseParametersAvailable(array('user_id'))) {
+        $requestData = $request->getParsedBody();
+        $userId = $requestData['user_id'];
+
+        $db = new UserOperation();
+
+        $responseData = array();
+		
+		$result = $db->getAllFollowing($userId);
+
+        if ($result) {
+            $responseData['error'] = false;
+            $responseData['message'] = 'Following users list.';
+			$responseData['following'] = $result;
+        } else {
+            $responseData['error'] = true;
+            $responseData['message'] = 'Could not retrieve list of following users.';
+        }
+
+        $response->getBody()->write(json_encode($responseData));
+    }
+});
+
+
 
 //---TweetOperation.php---//
 

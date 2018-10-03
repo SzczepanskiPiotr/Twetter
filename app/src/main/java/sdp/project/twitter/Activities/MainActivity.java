@@ -42,10 +42,8 @@ import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.iid.FirebaseInstanceId;
 
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -68,7 +66,6 @@ import sdp.project.twitter.API.APIUrl;
 import sdp.project.twitter.Utils.CustomAnimationDrawable;
 import sdp.project.twitter.Utils.GlideApp;
 import sdp.project.twitter.API.Result;
-import sdp.project.twitter.Utils.MyFirebaseMessagingService;
 import sdp.project.twitter.Utils.SaveSettings;
 import sdp.project.twitter.Model.SearchType;
 import sdp.project.twitter.Model.TweetItem;
