@@ -11,27 +11,27 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.io.UnsupportedEncodingException;
-
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+
 import sdp.project.tweeter.R;
 import sdp.project.twitter.API.APIService;
 import sdp.project.twitter.API.APIUrl;
 import sdp.project.twitter.API.Result;
 import sdp.project.twitter.Utils.SaveSettings;
 
-import static java.lang.System.in;
 
 public class LoginActivity extends AppCompatActivity {
+
+    private static final String TAG = "LoginActivity";
 
     // UI references.
     private EditText etName;
@@ -88,18 +88,9 @@ public class LoginActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), "One of the fields is empty!", Toast.LENGTH_SHORT).show();
 
         } else {
-            //building retrofit object
-            Retrofit retrofit = new Retrofit.Builder()
-                    .baseUrl(APIUrl.BASE_URL)
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .build();
-
-            //Defining retrofit api service
-            APIService service = retrofit.create(APIService.class);
-
 
             //defining the call
-            Call<Result> call = service.loginUser(name, etPassword.getText().toString(), SaveSettings.getInstance(getApplicationContext()).getToken());
+            Call<Result> call = APIUrl.getApi().loginUser(name, etPassword.getText().toString(), SaveSettings.getInstance(getApplicationContext()).getToken());
 
             //calling the api
             call.enqueue(new Callback<Result>() {
@@ -110,9 +101,20 @@ public class LoginActivity extends AppCompatActivity {
                     Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
                     if (!response.body().getError()) {
                         SaveSettings.getInstance(getApplicationContext()).userLogin(response.body().getUser());
+                        SaveSettings.getInstance(getApplicationContext()).saveArrayList(response.body().getFollowing(),"FOLLOWING");
                         for(int i : response.body().getFollowing())
                         {
-                            Log.i("TAGLOGIN",i+"");
+                            FirebaseMessaging.getInstance().subscribeToTopic(String.valueOf(i))
+                                    .addOnCompleteListener(task -> {
+                                        String msg = "Following";
+                                        if (!task.isSuccessful()) {
+                                            msg = "Failed following";
+                                        }
+                                        Log.d(TAG, msg);
+                                        Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+                                    });
+
+                            Log.i(TAG,i+"");
                         }
                         finish();
                         startActivity(new Intent(getApplicationContext(), MainActivity.class));

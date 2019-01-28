@@ -4,7 +4,11 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
-import com.google.firebase.messaging.FirebaseMessagingService;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 
 import sdp.project.twitter.Model.User;
 
@@ -23,6 +27,7 @@ public class SaveSettings {
     private static final String SETTINGS_EMAIL = "myRef_email";
     private static final String SETTINGS_PICTUREPATH = "myRef_picturepath";
     private static final String SETTINGS_TOKEN = "myRef_token";
+    private static final ArrayList<Integer> FOLLOWING = new ArrayList<>();
 
     private SaveSettings(Context context){
         this.context = context;
@@ -59,8 +64,28 @@ public class SaveSettings {
         editor.putString(SETTINGS_PICTUREPATH, user.getPicture_path());
         editor.apply();
 
-
         return true;
+    }
+
+    /**
+     *     Save and get ArrayList in SharedPreference
+     */
+
+    public void saveArrayList(ArrayList<Integer> list, String key){
+        SharedPreferences sharedPreferences = context.getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        Gson gson = new Gson();
+        String json = gson.toJson(list);
+        editor.putString(key, json);
+        editor.apply();     // This line is IMPORTANT !!!
+    }
+
+    public ArrayList<Integer> getArrayList(String key){
+        Gson gson = new Gson();
+        SharedPreferences sharedPreferences = context.getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
+        String json = sharedPreferences.getString(key, null);
+        Type type = new TypeToken<ArrayList<Integer>>() {}.getType();
+        return gson.fromJson(json, type);
     }
 
     public boolean isLoggedIn() {

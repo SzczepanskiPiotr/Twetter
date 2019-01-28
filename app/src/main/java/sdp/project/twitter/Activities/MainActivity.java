@@ -2,8 +2,10 @@ package sdp.project.twitter.Activities;
 
 import android.app.ProgressDialog;
 import android.app.SearchManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -20,6 +22,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 import android.support.media.ExifInterface;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.OrientationHelper;
@@ -40,14 +43,13 @@ import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -63,12 +65,12 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import sdp.project.tweeter.R;
 import sdp.project.twitter.API.APIService;
 import sdp.project.twitter.API.APIUrl;
-import sdp.project.twitter.Utils.CustomAnimationDrawable;
-import sdp.project.twitter.Utils.GlideApp;
 import sdp.project.twitter.API.Result;
-import sdp.project.twitter.Utils.SaveSettings;
 import sdp.project.twitter.Model.SearchType;
 import sdp.project.twitter.Model.TweetItem;
+import sdp.project.twitter.Utils.CustomAnimationDrawable;
+import sdp.project.twitter.Utils.GlideApp;
+import sdp.project.twitter.Utils.SaveSettings;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -90,9 +92,19 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
 
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (TweetsType == SearchType.MyFollowing)
+                LoadTweets(0, SearchType.MyFollowing);
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "protected void onCreate(Bundle savedInstanceState)");
+
         setContentView(R.layout.activity_main);
 
         //Info of other users, hidden on main screen
@@ -109,28 +121,29 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+
         mAuth = FirebaseAuth.getInstance();
         mAuthListener = firebaseAuth -> {
-                FirebaseUser user = firebaseAuth.getCurrentUser();
-                if (user != null) {
-                    // User is signed in
-                    Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
-                } else {
-                    // User is signed out
-                    Log.d(TAG, "onAuthStateChanged:signed_out");
-                }
+            FirebaseUser user = firebaseAuth.getCurrentUser();
+            if (user != null) {
+                // User is signed in
+                Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
+            } else {
+                // User is signed out
+                Log.d(TAG, "onAuthStateChanged:signed_out");
+            }
         };
         mAuth.signInAnonymously().addOnCompleteListener(this, task -> {
             Log.d(TAG, "signInAnonymously:onComplete:" + task.isSuccessful());
-            if(!task.isSuccessful()){
+            if (!task.isSuccessful()) {
                 Log.w(TAG, "signInAnonymously", task.getException());
             }
         });
 
-        Log.i( TAG, "LOGGING IN USER");
+        Log.i(TAG, "LOGGING IN USER");
 
         tweetWall = new ArrayList<>();
-        myTweetWall = new TweetWall(tweetWall,this);
+        myTweetWall = new TweetWall(tweetWall, this);
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, OrientationHelper.VERTICAL, false);
         RecyclerView mRecyclerView = findViewById(R.id.RV_tweets);
@@ -141,10 +154,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-                if(linearLayoutManager.findLastVisibleItemPosition() == tweetWall.size()-1 && LoadMore && !tweetWall.get(tweetWall.size()-1).tweet_date.equals("notweet"))
-                {
+                if (linearLayoutManager.findLastVisibleItemPosition() == tweetWall.size() - 1 && LoadMore && !tweetWall.get(tweetWall.size() - 1).tweet_date.equals("notweet")) {
                     LoadMore = false;
-                    LoadTweets(tweetWall.size()-1,TweetsType);
+                    LoadTweets(tweetWall.size() - 1, TweetsType);
                 }
             }
         });
@@ -154,15 +166,19 @@ public class MainActivity extends AppCompatActivity {
     public void onStart() {
         super.onStart();
         mAuth.addAuthStateListener(mAuthListener);
+        LocalBroadcastManager.getInstance(this).registerReceiver((mMessageReceiver),
+                new IntentFilter("MESSAGE_RECEIVED")
+        );
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        if(mAuthListener != null){
+        if (mAuthListener != null) {
             mAuth.removeAuthStateListener(mAuthListener);
         }
         hideProgressDialog();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
     }
 
     @Override
@@ -211,7 +227,7 @@ public class MainActivity extends AppCompatActivity {
         // handle item selection
         switch (item.getItemId()) {
             case R.id.home: {
-                if(TweetsType != SearchType.MyFollowing) {
+                if (TweetsType != SearchType.MyFollowing) {
                     searchView.setIconified(true);
                     TweetsType = SearchType.MyFollowing;
                     LoadTweets(0, TweetsType);
@@ -219,6 +235,7 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
             case R.id.logout: {
+                //TODO: UNSUBSCRIBE FROM TOPICS ON LOGOUT TO NOT RECEIVE NOTIFICATIONS FROM OLD ACCOUNT
                 SaveSettings.getInstance(this.getApplicationContext()).logout();
                 finish();
                 startActivity(new Intent(getApplicationContext(), LoginActivity.class));
@@ -243,17 +260,8 @@ public class MainActivity extends AppCompatActivity {
             buFollow.setText(R.string.buFollow_follow);
         }
         showProgressDialog();
-        //building retrofit object
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(APIUrl.BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-
-        //Defining retrofit api service
-        APIService service = retrofit.create(APIService.class);
-
         //defining the call
-        Call<Result> call = service.followUser(SaveSettings.getInstance(this.getApplicationContext()).getUser().getUserID(), SelectedUserID, Operation);
+        Call<Result> call = APIUrl.getApi().followUser(SaveSettings.getInstance(this.getApplicationContext()).getUser().getUserID(), SelectedUserID, Operation);
 
         //calling the api
         call.enqueue(new Callback<Result>() {
@@ -281,7 +289,7 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<TweetItem> tweetWallAdapter;
         Context context;
 
-        public class addTweetViewHolder extends RecyclerView.ViewHolder{
+        private class addTweetViewHolder extends RecyclerView.ViewHolder {
 
             TextView etCounter;
             EditText etPost;
@@ -289,7 +297,7 @@ public class MainActivity extends AppCompatActivity {
             ImageView iv_attach;
             ImageView iv_temp;
 
-            addTweetViewHolder(View viewItem){
+            addTweetViewHolder(View viewItem) {
                 super(viewItem);
 
                 etCounter = viewItem.findViewById(R.id.etCounter);
@@ -301,21 +309,21 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        class loadingTweetViewHolder extends RecyclerView.ViewHolder{
+        class loadingTweetViewHolder extends RecyclerView.ViewHolder {
 
-            loadingTweetViewHolder(View viewItem){
+            loadingTweetViewHolder(View viewItem) {
                 super(viewItem);
             }
         }
 
-        class noTweetViewHolder extends RecyclerView.ViewHolder{
+        class noTweetViewHolder extends RecyclerView.ViewHolder {
 
-            noTweetViewHolder(View viewItem){
+            noTweetViewHolder(View viewItem) {
                 super(viewItem);
             }
         }
 
-        class singleTweetHolder extends RecyclerView.ViewHolder{
+        class singleTweetHolder extends RecyclerView.ViewHolder {
 
             TextView txtUserName;
             TextView txt_tweet;
@@ -326,7 +334,7 @@ public class MainActivity extends AppCompatActivity {
             TextView favouriteCount;
 
 
-            singleTweetHolder(View viewItem){
+            singleTweetHolder(View viewItem) {
                 super(viewItem);
 
                 txtUserName = viewItem.findViewById(R.id.txtUserName);
@@ -370,10 +378,66 @@ public class MainActivity extends AppCompatActivity {
         public int getItemViewType(int position) {
 
             switch (tweetWallAdapter.get(position).tweet_date) {
-                case "add" :  return 0;
-                case "loading":  return 1;
-                case "notweet" :  return  2;
-                default : return 3;
+                case "add":
+                    return 0;
+                case "loading":
+                    return 1;
+                case "notweet":
+                    return 2;
+                default:
+                    return 3;
+            }
+        }
+
+
+        void sendTweetToDb(String tweetText, String imageUrl){
+            //defining the call
+            Call<Result> call = APIUrl.getApi().tweetAdd(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), tweetText, imageUrl);
+            //calling the api
+            call.enqueue(new Callback<Result>() {
+                @Override
+                public void onResponse(Call<Result> call, Response<Result> response) {
+                    LoadTweets(0, TweetsType);
+                    Log.d(TAG, "pozdro działa");
+                }
+
+                @Override
+                public void onFailure(Call<Result> call, Throwable t1) {
+                    hideProgressDialog();
+                    Toast.makeText(getApplicationContext(), t1.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
+        void prepareTweet(String tweetText,boolean hasImage) {
+            Log.d(TAG, "TweetAdd with picture");
+            showProgressDialog();
+            if(hasImage) {
+                String downloadUrl;
+                FirebaseStorage storage = FirebaseStorage.getInstance();
+                // Create a storage reference from our app
+                StorageReference storageRef = storage.getReferenceFromUrl("gs://tweeter-55347.appspot.com/");
+                DateFormat df = DateFormat.getDateTimeInstance();
+                Date dateobj = new Date();
+                String myDownloadUrl = SaveSettings.getInstance(getApplicationContext()).getUser().getUserID() + "_" + df.format(dateobj) + ".jpg";
+                final StorageReference picRef = storageRef.child(myDownloadUrl);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                loadImageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                byte[] data = baos.toByteArray();
+                final UploadTask uploadTask = picRef.putBytes(data);
+                uploadTask.addOnFailureListener(e -> {
+                    Toast.makeText(MainActivity.this, "Image could not be uploaded: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    Log.e(TAG, e.getMessage());
+                })
+                        .addOnSuccessListener(taskSnapshot -> picRef.getDownloadUrl()
+                                .addOnSuccessListener(uri -> {
+                                    sendTweetToDb(tweetText,uri.toString());
+                                    hideProgressDialog();
+                                    Toast.makeText(context, "Tweet added", Toast.LENGTH_SHORT).show();
+                                }));
+            }
+            else{
+                sendTweetToDb(tweetText,"none");
             }
         }
 
@@ -392,112 +456,38 @@ public class MainActivity extends AppCompatActivity {
 
 
                         if (loadedImage) {
+                            hideProgressDialog();
+                            ((addTweetViewHolder) holder).iv_temp.setVisibility(ImageView.VISIBLE);
                             ((addTweetViewHolder) holder).iv_temp.setImageBitmap(loadImageBitmap);
-                        }else{
-                            ((addTweetViewHolder) holder).iv_temp.setImageBitmap(loadImageBitmap);
+                        } else {
                             ((addTweetViewHolder) holder).iv_temp.setVisibility(ImageView.INVISIBLE);
+                            ((addTweetViewHolder) holder).iv_temp.setImageBitmap(null);
                         }
                         ((addTweetViewHolder) holder).iv_attach.setOnClickListener(view -> CheckUserPermission());
                         ((addTweetViewHolder) holder).iv_post.setOnClickListener(view -> {
                             if (((addTweetViewHolder) holder).etPost.length() <= 0)
                                 Toast.makeText(context, "Tweet is empty.", Toast.LENGTH_SHORT).show();
-                                //TODO: MERGE INTO ONE RETROFIT CALL
                             else if (((addTweetViewHolder) holder).etPost.length() <= 150) {
-                                if (((addTweetViewHolder) holder).iv_temp.getVisibility() == View.VISIBLE) {
-                                    showProgressDialog();
-                                    FirebaseStorage storage = FirebaseStorage.getInstance();
-                                    // Create a storage reference from our app
-                                    StorageReference storageRef = storage.getReferenceFromUrl("gs://tweeter-55347.appspot.com/");
-                                    DateFormat df = DateFormat.getDateTimeInstance();
-                                    Date dateobj = new Date();
-                                    // System.out.println(df.format(dateobj));
-                                    // Create a reference to "mountains.jpg"
-                                    String myDownloadUrl = SaveSettings.getInstance(getApplicationContext()).getUser().getUserID() + "_" + df.format(dateobj) + ".jpg";
-                                    final StorageReference picRef = storageRef.child(myDownloadUrl);
-                                    ((addTweetViewHolder) holder).iv_temp.setDrawingCacheEnabled(true);
-                                    ((addTweetViewHolder) holder).iv_temp.buildDrawingCache();
-                                    BitmapDrawable drawable = (BitmapDrawable) ((addTweetViewHolder) holder).iv_temp.getDrawable();
-                                    Bitmap bitmap = drawable.getBitmap();
-                                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-                                    byte[] data = baos.toByteArray();
+                                if (((addTweetViewHolder) holder).iv_temp.getVisibility() == View.VISIBLE)
+                                    prepareTweet(((addTweetViewHolder) holder).etPost.getText().toString(),true);
+                                else
+                                    prepareTweet(((addTweetViewHolder) holder).etPost.getText().toString(),false);
+                               // tweetWallAdapter.add(1,new TweetItem(999,((addTweetViewHolder) holder).etPost.getText().toString(),"none","noDate", SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(),SaveSettings.getInstance(getApplicationContext()).getUser().getUsername(),SaveSettings.getInstance(getApplicationContext()).getUser().getPicture_path(),0,false));
+                               // notifyItemInserted(1);
+                                //GlideApp.with(getApplicationContext()).load(t.tweet_picture).placeholder(R.drawable.round_background_white).optionalCenterCrop().into(((singleTweetHolder) holder).tweet_picture);
 
-                                    final UploadTask uploadTask = picRef.putBytes(data);
-                                    uploadTask.addOnFailureListener(e -> Toast.makeText(MainActivity.this, "Image could not be uploaded: " + e.getMessage(), Toast.LENGTH_LONG).show())
-                                            .addOnSuccessListener(taskSnapshot -> picRef.getDownloadUrl().
-                                                    addOnSuccessListener(uri -> {
-                                                        String downloadUrl = uri.toString();
-                                                        hideProgressDialog();
-                                                        Toast.makeText(context, "Tweet added", Toast.LENGTH_SHORT).show();
-                                                        //building retrofit object
-                                                        Retrofit retrofit = new Retrofit.Builder()
-                                                                .baseUrl(APIUrl.BASE_URL)
-                                                                .addConverterFactory(GsonConverterFactory.create())
-                                                                .build();
+                                //GlideApp.with(getApplicationContext()).load(tweetWallAdapter.get(1).tweet_picture).placeholder(R.drawable.round_background_white).optionalCenterCrop().into(((singleTweetHolder) holder).tweet_picture);
 
-                                                        //Defining retrofit api service
-                                                        APIService service = retrofit.create(APIService.class);
-
-                                                        //defining the call
-                                                        Call<Result> call = service.tweetAdd(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), ((addTweetViewHolder) holder).etPost.getText().toString(), downloadUrl);
-
-                                                        //calling the api
-                                                        call.enqueue(new Callback<Result>() {
-                                                            @Override
-                                                            public void onResponse(Call<Result> call, Response<Result> response) {
-                                                                //hiding progress dialog
-                                                                hideProgressDialog();
-                                                                //displaying the message from the response as toast
-                                                                Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
-                                                                ((addTweetViewHolder) holder).etPost.setText("");
-                                                                loadedImage = false;
-                                                                loadImageBitmap = null;
-                                                                TweetsType = SearchType.MyFollowing;
-                                                                LoadTweets(0, TweetsType);
-                                                            }
-
-                                                            @Override
-                                                            public void onFailure(Call<Result> call, Throwable t1) {
-                                                                hideProgressDialog();
-                                                                Toast.makeText(getApplicationContext(), t1.getMessage(), Toast.LENGTH_LONG).show();
-                                                            }
-                                                        });
-                                                    }));
-                                } else {
-                                    //building retrofit object
-                                    Retrofit retrofit = new Retrofit.Builder()
-                                            .baseUrl(APIUrl.BASE_URL)
-                                            .addConverterFactory(GsonConverterFactory.create())
-                                            .build();
-
-                                    //Defining retrofit api service
-                                    APIService service = retrofit.create(APIService.class);
-
-                                    //defining the call
-                                    Call<Result> call = service.tweetAdd(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), ((addTweetViewHolder) holder).etPost.getText().toString(), "none");
-
-                                    //calling the api
-                                    call.enqueue(new Callback<Result>() {
-                                        @Override
-                                        public void onResponse(Call<Result> call, Response<Result> response) {
-                                            //hiding progress dialog
-                                            hideProgressDialog();
-                                            //displaying the message from the response as toast
-                                            Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
-                                            ((addTweetViewHolder) holder).etPost.setText("");
-                                            loadedImage = false;
-                                            loadImageBitmap = null;
-                                            TweetsType = SearchType.MyFollowing;
-                                            LoadTweets(0, TweetsType);
-                                        }
-
-                                        @Override
-                                        public void onFailure(Call<Result> call, Throwable t1) {
-                                            hideProgressDialog();
-                                            Toast.makeText(getApplicationContext(), t1.getMessage(), Toast.LENGTH_LONG).show();
-                                        }
-                                    });
-                                }
+                              //  tweetWallAdapter.get(1)
+                                //hiding progress dialog
+                                hideProgressDialog();
+                                //displaying the message from the response as toast
+                                //Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
+                                ((addTweetViewHolder) holder).etPost.setText("");
+                                loadedImage = false;
+                                loadImageBitmap = null;
+                                TweetsType = SearchType.MyFollowing;
+                                LoadTweets(0, TweetsType);
                             } else
                                 Toast.makeText(context, "Tweet is too long", Toast.LENGTH_SHORT).show();
                         });
@@ -523,9 +513,7 @@ public class MainActivity extends AppCompatActivity {
                         ((addTweetViewHolder) holder).etPost.addTextChangedListener(mTextEditorWatcher);
                         break;
                     }
-
                     case "loading": {
-                        Log.i(TAG,"TWEETLOADING");
                         break;
                     }
                     case "notweet": {
@@ -546,21 +534,11 @@ public class MainActivity extends AppCompatActivity {
                                 GlideApp.with(getApplicationContext()).load(t.picture_path).optionalCenterCrop().into(iv_channel_icon);
 
                                 //TODO: I THINK FOLLOWING STATUS IS ALREADY IN 'tweetlist' REST CALL
-                                //building retrofit object
-                                Retrofit retrofit = new Retrofit.Builder()
-                                        .baseUrl(APIUrl.BASE_URL)
-                                        .addConverterFactory(GsonConverterFactory.create())
-                                        .build();
-
-                                //Defining retrofit api service
-                                APIService service = retrofit.create(APIService.class);
-
-                                //defining the call
-                                Call<Result> call = service.checkFollowing(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), SelectedUserID);
-
+                                Call<Result> call = APIUrl.getApi().checkFollowing(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), SelectedUserID);
                                 //calling the api
                                 call.enqueue(new Callback<Result>() {
                                     @Override
+                                    //TODO: SHOULD LIST IN SHAREDPREFERENCES ALSO UPDATE? POSSIBLY
                                     public void onResponse(Call<Result> call, Response<Result> response) {
                                         //hiding progress dialog
                                         hideProgressDialog();
@@ -568,8 +546,10 @@ public class MainActivity extends AppCompatActivity {
                                             buFollow.setText(R.string.buFollow_follow);
                                             buFollow.setSelected(false);
                                             FirebaseMessaging.getInstance().unsubscribeFromTopic(String.valueOf(SelectedUserID));
+
                                         } else {
                                             FirebaseMessaging.getInstance().subscribeToTopic(String.valueOf(SelectedUserID));
+                                            //SaveSettings.getInstance(getApplicationContext()).saveArrayList(SaveSettings.getInstance(getApplicationContext()).getArrayList("FOLLOWING").,"FOLLOWING");
                                             buFollow.setText(R.string.buFollow_unFollow);
                                             buFollow.setSelected(true);
                                         }
@@ -593,13 +573,13 @@ public class MainActivity extends AppCompatActivity {
                         //Picasso.get().load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
                         //Glide.with(getApplicationContext()).load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
 
-                        if(t.tweet_picture.equals("none") || t.tweet_picture.equals("null") )
+                        if (t.tweet_picture.equals("none") || t.tweet_picture.equals("null"))
                             ((singleTweetHolder) holder).tweet_picture.setVisibility(View.GONE);
                         else
                             GlideApp.with(getApplicationContext()).load(t.tweet_picture).placeholder(R.drawable.round_background_white).optionalCenterCrop().into(((singleTweetHolder) holder).tweet_picture);
-                            //Picasso.get().load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
-                            //Glide.with(getApplicationContext()).load(t.picture_path).into(((singleTweetHolder) holder).picture_path);
-                            //GlideApp.with(getApplicationContext()).load(t.picture_path).optionalCenterCrop().into(((singleTweetHolder) holder).picture_path);
+                        //Picasso.get().load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
+                        //Glide.with(getApplicationContext()).load(t.picture_path).into(((singleTweetHolder) holder).picture_path);
+                        //GlideApp.with(getApplicationContext()).load(t.picture_path).optionalCenterCrop().into(((singleTweetHolder) holder).picture_path);
 
 
                         ((singleTweetHolder) holder).iv_share.setOnClickListener(v -> {
@@ -640,18 +620,8 @@ public class MainActivity extends AppCompatActivity {
                             t.isFavourite = !t.isFavourite;
                             ((singleTweetHolder) holder).favouriteCount.setText(String.valueOf(t.favouriteCount));
 
-                            //Log.i("URL",""+url);
-                            //building retrofit object
-                            Retrofit retrofit = new Retrofit.Builder()
-                                    .baseUrl(APIUrl.BASE_URL)
-                                    .addConverterFactory(GsonConverterFactory.create())
-                                    .build();
-
-                            //Defining retrofit api service
-                            APIService service = retrofit.create(APIService.class);
-
                             //defining the call
-                            Call<Result> call = service.favourite(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), t.tweet_id);
+                            Call<Result> call = APIUrl.getApi().favourite(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), t.tweet_id);
 
                             //calling the api
                             call.enqueue(new Callback<Result>() {
@@ -659,7 +629,7 @@ public class MainActivity extends AppCompatActivity {
 
                                 @Override
                                 public void onResponse(Call<Result> call, Response<Result> response) {
-                                    Log.i(TAG,"restcall");
+                                    Log.i(TAG, "restcall");
                                     //hiding progress dialog
                                     hideProgressDialog();
                                     /*if (response.body().getError()) {
@@ -708,8 +678,8 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public int getItemCount() {
-            if(tweetWallAdapter == null)
-                return  0;
+            if (tweetWallAdapter == null)
+                return 0;
             return tweetWallAdapter.size();
         }
     }
@@ -736,7 +706,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     void CheckUserPermission() {
-        Log.i(TAG, "Requesting permission");
+        Log.d(TAG, "CheckUserPermission()");
         if (Build.VERSION.SDK_INT >= 23) {
             if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE) !=
                     PackageManager.PERMISSION_GRANTED) {
@@ -753,6 +723,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+
+        Log.d(TAG, "onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) <<" + requestCode);
+
         switch (requestCode) {
             case REQUEST_CODE_ASK_PERMISSIONS:
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -770,6 +743,8 @@ public class MainActivity extends AppCompatActivity {
     int RESULT_LOAD_IMAGE = 346;
 
     void LoadImage() {
+
+        Log.d(TAG, "LoadImage()");
         Intent i = new Intent(
                 Intent.ACTION_PICK,
                 android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
@@ -781,7 +756,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
+        Log.d(TAG, "onActivityResult(int requestCode, int resultCode, Intent data) >> " + requestCode + " >> " + resultCode + " >> " + data);
+
         if (requestCode == RESULT_LOAD_IMAGE && resultCode == RESULT_OK && null != data) {
+            showProgressDialog();
             Uri selectedImage = data.getData();
             String[] filePathColumn = {MediaStore.Images.Media.DATA};
 
@@ -797,8 +775,8 @@ public class MainActivity extends AppCompatActivity {
 
             final BitmapFactory.Options options = new BitmapFactory.Options();
             options.inMutable = true;
-            Bitmap b = BitmapFactory.decodeFile(picturePath,options);
-            if(getExifRotation(picturePath)!=0){
+            Bitmap b = BitmapFactory.decodeFile(picturePath, options);
+            if (getExifRotation(picturePath) != 0) {
                 Matrix matrix = new Matrix();
 
                 matrix.postRotate(getExifRotation(picturePath));
@@ -813,7 +791,7 @@ public class MainActivity extends AppCompatActivity {
             float actualHeight = b.getHeight();
             float imgRatio = (actualWidth / actualHeight);
             float maxRatio = maxWidth / maxHeight;
-            Log.i(TAG, "ACT_WIDTH:"+actualWidth+"ACT_HEIGHT:"+actualHeight+"IMG_RATIO"+imgRatio);
+            Log.i(TAG, "ACT_WIDTH:" + actualWidth + "ACT_HEIGHT:" + actualHeight + "IMG_RATIO" + imgRatio);
 
             //      width and height values are set maintaining the aspect ratio of the image
             if (actualHeight > maxHeight || actualWidth > maxWidth) {
@@ -827,17 +805,20 @@ public class MainActivity extends AppCompatActivity {
                     actualWidth = maxWidth;
                 }
             }
-            Log.i(TAG, "NEW_WIDTH:"+Math.round(actualWidth)+"NEW_HEIGHT:"+Math.round(actualHeight)+"IMG_RATIO"+imgRatio+"ROTATION:"+getExifRotation(picturePath));
+            Log.i(TAG, "NEW_WIDTH:" + Math.round(actualWidth) + "NEW_HEIGHT:" + Math.round(actualHeight) + "IMG_RATIO" + imgRatio + "ROTATION:" + getExifRotation(picturePath));
 
             //iv_temp.setImageBitmap(Bitmap.createScaledBitmap(b,Math.round(actualWidth),Math.round(actualHeight),false));
             //iv_temp.setVisibility(ImageView.VISIBLE);
             loadedImage = true;
-            loadImageBitmap = Bitmap.createScaledBitmap(b,Math.round(actualWidth),Math.round(actualHeight),false);
+            loadImageBitmap = Bitmap.createScaledBitmap(b, Math.round(actualWidth), Math.round(actualHeight), false);
             myTweetWall.notifyItemChanged(0);
         }
     }
 
     public static int getExifRotation(String filePath) {
+
+        Log.d(TAG, "getExifRotation(String filePath) >> " + filePath);
+
         if (filePath == null) return 0;
         try {
             ExifInterface exif = new ExifInterface(filePath);
@@ -861,7 +842,7 @@ public class MainActivity extends AppCompatActivity {
     void LoadTweets(int StartFrom, int TweetType) {
         //setTitle(SaveSettings.getInstance(getApplicationContext()).getUser().getUsername());
         //getActionBar().setTitle(SaveSettings.getInstance(getApplicationContext()).getUser().getUsername());
-        Log.i( TAG, "LOADING TWEETS");
+        Log.i(TAG, "LOADING TWEETS");
         int user_id = SaveSettings.getInstance(getApplicationContext()).getUser().getUserID();
         this.StartFrom = StartFrom;
         this.TweetsType = TweetType;
@@ -875,18 +856,9 @@ public class MainActivity extends AppCompatActivity {
 
         myTweetWall.notifyDataSetChanged();
 
-        //building retrofit object
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(APIUrl.BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-
-        //Defining retrofit api service
-        APIService service = retrofit.create(APIService.class);
-
         //defining the call
         Log.i(TAG, "USER ID: " + user_id + " STARTFROM: " + StartFrom + " QUERY: " + Query + " TWEETTYPE: " + TweetType + " CHECK USER ID: " + SelectedUserID);
-        Call<Result> call = service.tweetList(user_id, StartFrom, Query, TweetType, SelectedUserID);
+        Call<Result> call = APIUrl.getApi().tweetList(user_id, StartFrom, Query, TweetType, SelectedUserID);
 
         //calling the api
         call.enqueue(new Callback<Result>() {
@@ -908,7 +880,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     // listnewsData.remove(listnewsData.size()-1);
                     //tweetWall.add(new TweetItem(0, null, null,
-                            //"notweet", 0, null, null, 0, false));
+                    //"notweet", 0, null, null, 0, false));
                 } else {
                     if (StartFrom == 0) {
                         tweetWall.clear();
