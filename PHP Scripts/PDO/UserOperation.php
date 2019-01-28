@@ -115,6 +115,13 @@ class UserOperation
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         return $user;
     }
+	
+	function getUserById($user_id){
+        $stmt = DB::prepare("SELECT user_id, username, email, picture_path FROM users WHERE user_id = ?");
+        $stmt->execute([$user_id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $user;
+	}		
  
  /*
     //Method to get all users

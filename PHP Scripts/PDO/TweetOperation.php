@@ -7,7 +7,8 @@ class TweetOperation
     function __construct()
     {
 		require_once 'DbConnect.php';
-		require_once 'Constants.php';
+		require_once 'Constants.php';		
+		require_once 'UserOperation.php';
     }
  
 	//Method to add new tweet
@@ -15,59 +16,29 @@ class TweetOperation
 		
 		$stmt = DB::prepare("INSERT INTO tweets(user_id,tweet_text,tweet_picture) VALUES (?, ?, ?)"); 
         $stmt->execute([$userId, $tweet_text, $tweet_picture]);
-		$this->notifyFollowers($userId);
+		$this->notifyFollowers($userId, $tweet_text);
 		return $stmt->rowCount()>0;
 	}
 	
 	//Method to show tweets
 	function tweetList($userId, $startFrom, $query, $op, $check_user_id){
 		if($op == 1){//myFollowingSearch
-		
-			/*$inStmt = DB::prepare("SELECT following_user_id FROM following WHERE user_id=?");
-			$inStmt->execute([$userId]);
-			$arr = ($inStmt->fetchAll(PDO::FETCH_NUM));
-			$array = array();
-			foreach ($arr as $element ) {
-				$array = array_merge($array, $element);
-			}
-			$in  = str_repeat('?,', count($array)) . '?';
-
-			$params = array_merge($array,[$userId]);
-			$sql = "SELECT * FROM user_tweets WHERE user_id IN ($in) ORDER BY tweet_date DESC LIMIT 20 OFFSET ?";
-			$stmt = DB::prepare($sql);	
-			for ($x = 0; $x <= count($params) - 1; $x++) {
-				$param = $params[$x];
-				echo " ID:" .($x+1) . " PARAM:". $param;
-				$stmt->bindParam(($x+1),$param);
-			} 
-			$param = (int)$startFrom;
-			echo " ID:" .(count($params)+1) . " PARAM:". $param;
-			$stmt->bindParam((count($params)+1),$param,PDO::PARAM_INT);
-			$stmt->execute();
-			return $sql;
-			*/
-			$stmt = DB::prepare("SELECT t.* FROM following f RIGHT JOIN user_tweets t ON t.user_id = f.following_user_id WHERE f.user_id=? OR t.user_id=? ORDER  BY t.tweet_date DESC LIMIT 20 OFFSET ?");
+			$stmt = DB::prepare("SELECT * FROM tweets t WHERE t.user_id IN (SELECT following_user_id FROM following WHERE user_id = ?) OR t.user_id = ? ORDER  BY t.tweet_date DESC LIMIT 20 OFFSET ?");
 			$stmt->bindParam(1,$userId);
 			$stmt->bindParam(2,$userId);
 			$startFrom = (int)$startFrom;
 			$stmt->bindParam(3,$startFrom,PDO::PARAM_INT);
 			$stmt->execute();
 			$tweets = $stmt->fetchAll(PDO::FETCH_ASSOC);
-			//echo $tweets[0]['tweet_text'];
-			//echo "COUNT" .$tweets[1]['username'];
-			//echo "\n" .count($tweets);
 			for($x = 0; $x <= count($tweets) - 1; $x++){
 				
 				$localUserId = $tweets[$x]['user_id'] ;
 				$localTweetId = $tweets[$x]['tweet_id'];
-				//echo "NEW:" .$localUserId, $localTweetId;
 				if($this->checkFavourite($userId,$localTweetId)){
 					$temp = array('isFavourite' => 'true');
-					//echo $temp['isFavourite'];
 					$tweets[$x] = array_merge($tweets[$x],$temp);
 				}else{
 					$temp = array('isFavourite' => 'false');
-					//echo $temp['isFavourite'];
 					$tweets[$x] = array_merge($tweets[$x],$temp);
 				}
 				
@@ -83,21 +54,15 @@ class TweetOperation
 			$stmt->bindParam(2,$startFrom,PDO::PARAM_INT);
 			$stmt->execute();	
 			$tweets = $stmt->fetchAll(PDO::FETCH_ASSOC);
-			//echo $tweets[0]['tweet_text'];
-			//echo "COUNT" .$tweets[1]['username'];
-			//echo "\n" .count($tweets);
 			for($x = 0; $x <= count($tweets) - 1; $x++){
 				
 				$localUserId = $tweets[$x]['user_id'] ;
 				$localTweetId = $tweets[$x]['tweet_id'];
-				//echo "NEW:" .$localUserId, $localTweetId;
 				if($this->checkFavourite($userId,$localTweetId)){
 					$temp = array('isFavourite' => 'true');
-					//echo $temp['isFavourite'];
 					$tweets[$x] = array_merge($tweets[$x],$temp);
 				}else{
 					$temp = array('isFavourite' => 'false');
-					//echo $temp['isFavourite'];
 					$tweets[$x] = array_merge($tweets[$x],$temp);
 				}
 				
@@ -113,25 +78,17 @@ class TweetOperation
 			$stmt->bindParam(2,$startFrom,PDO::PARAM_INT);
 			$stmt->execute();	
 			$tweets = $stmt->fetchAll(PDO::FETCH_ASSOC);
-			//echo $tweets[0]['tweet_text'];
-			//echo "COUNT" .$tweets[1]['username'];
-			//echo "\n" .count($tweets);
 			for($x = 0; $x <= count($tweets) - 1; $x++){
 				
 				$localUserId = $tweets[$x]['user_id'] ;
 				$localTweetId = $tweets[$x]['tweet_id'];
-				//echo "NEW:" .$localUserId, $localTweetId;
 				if($this->checkFavourite($userId,$localTweetId)){
 					$temp = array('isFavourite' => 'true');
-					//echo $temp['isFavourite'];
 					$tweets[$x] = array_merge($tweets[$x],$temp);
 				}else{
 					$temp = array('isFavourite' => 'false');
-					//echo $temp['isFavourite'];
 					$tweets[$x] = array_merge($tweets[$x],$temp);
-				}
-				
-				//echo "\n" .$x;
+				}	
 			}
 			return $tweets;		
 		}
@@ -169,18 +126,29 @@ class TweetOperation
 		return $stmt->rowCount()>0;
 	}
 	
-	function notifyFollowers($userId){
-		
+	function notifyFollowers($userId, $tweet_text){
+
 	#API access key from Google API's Console
     define( 'API_ACCESS_KEY', 'AAAAsYIbVL0:APA91bFAqQZ9Arq4Pf3PVHQf-UipnlE8UGpI_dr6PMMr1PWfDFYcksqd2MJzsEO6f-BN3ZWJ54a6kPU4JEMayle5DDl3cGPKA4ai0Yre3KsSe5ZzFe2pAwckWdKPWs2FNbGX5CcwGlSJ' );
+		
+	//Reducing notification length, FCM seems to handle it on it's own
+	/*
+	if(strlen($tweet_text)>=30){
+		$tweet_text = substr($tweet_text,0,27) . "...";
+	}
+	*/
+	
+	$db = new UserOperation();
+	$user = $db->getUserById($userId);
+	
 	#prep the bundle
-     $msg = array
-          (
-		'body' 	=> 'Body  Of Notification',
-		'title'	=> 'Title Of Notification',
-             	'icon'	=> 'myicon',/*Default Icon*/
-              	'sound' => 'mySound'/*Default sound*/
-          );
+    $msg = array
+	(
+		'body' 	=> $tweet_text,
+		'title'	=> $user[username] . " posted new tweet.",
+        'icon'	=> 'myicon',/*Default Icon*/
+        'sound' => 'mySound'/*Default sound*/
+    );
 		  
 	print_r($userId);
 	$fields = array
@@ -189,13 +157,12 @@ class TweetOperation
 				'notification'	=> $msg
 			);
 	
-	
 	$headers = array
 			(
 				'Authorization: key=' . API_ACCESS_KEY,
 				'Content-Type: application/json'
 			);
-#Send Reponse To FireBase Server	
+	#Send Reponse To FireBase Server	
 		$ch = curl_init();
 		curl_setopt( $ch,CURLOPT_URL, 'https://fcm.googleapis.com/fcm/send' );
 		curl_setopt( $ch,CURLOPT_POST, true );
@@ -205,7 +172,7 @@ class TweetOperation
 		curl_setopt( $ch,CURLOPT_POSTFIELDS, json_encode( $fields ) );
 		$result = curl_exec($ch );
 		curl_close( $ch );
-#Echo Result Of FireBase Server
-echo $result;		
+	#Echo Result Of FireBase Server
+	echo $result;		
 	}
 }
