@@ -12,10 +12,10 @@ class TweetOperation
     }
  
 	//Method to add new tweet
-	function tweetAdd($userId, $tweet_text, $tweet_picture){
+	function tweetAdd($userId, $tweet_text, $tweet_picture, $latitude, $longitude, $country, $city){
 		
-		$stmt = DB::prepare("INSERT INTO tweets(user_id,tweet_text,tweet_picture) VALUES (?, ?, ?)"); 
-        $stmt->execute([$userId, $tweet_text, $tweet_picture]);
+		$stmt = DB::prepare("INSERT INTO tweets(user_id,tweet_text,tweet_picture, latitude, longitude, country, city) VALUES (?, ?, ?, ? , ?, ?, ?)"); 
+        $stmt->execute([$userId, $tweet_text, $tweet_picture, $latitude, $longitude, $country, $city]);
 		$this->notifyFollowers($userId, $tweet_text);
 		return $stmt->rowCount()>0;
 	}
@@ -23,7 +23,7 @@ class TweetOperation
 	//Method to show tweets
 	function tweetList($userId, $startFrom, $query, $op, $check_user_id){
 		if($op == 1){//myFollowingSearch
-			$stmt = DB::prepare("SELECT * FROM tweets t WHERE t.user_id IN (SELECT following_user_id FROM following WHERE user_id = ?) OR t.user_id = ? ORDER  BY t.tweet_date DESC LIMIT 20 OFFSET ?");
+			$stmt = DB::prepare("SELECT * FROM user_tweets t WHERE t.user_id IN (SELECT following_user_id FROM following WHERE user_id = ?) OR t.user_id = ? ORDER  BY t.tweet_date DESC LIMIT 20 OFFSET ?");
 			$stmt->bindParam(1,$userId);
 			$stmt->bindParam(2,$userId);
 			$startFrom = (int)$startFrom;

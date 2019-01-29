@@ -53,7 +53,13 @@ public interface APIService {
     Call<Result> tweetAdd(
             @Field("user_id")           int user_id,
             @Field("tweet_text")        String tweet_text,
-            @Field("tweet_picture")     String tweet_picture);
+            @Field("tweet_picture")     String tweet_picture,
+            @Field("latitude")          Float latitude,
+            @Field("longitude")         Float longitude,
+            @Field("country")           String country,
+            @Field("city")              String city
+
+    );
 
     //Tweet list for user call
     @FormUrlEncoded

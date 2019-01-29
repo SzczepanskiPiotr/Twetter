@@ -194,15 +194,19 @@ $app->post('/getallfollowing', function (Request $request, Response $response) {
 
 //add new tweet
 $app->post('/tweetadd', function (Request $request, Response $response) {
-    if (isTheseParametersAvailable(array('user_id', 'tweet_text', 'tweet_picture'))) {
+    if (isTheseParametersAvailable(array('user_id', 'tweet_text', 'tweet_picture', 'latitude', 'longitude', 'country', 'city'))) {
         $requestData = $request->getParsedBody();
         $user_id = $requestData['user_id'];
         $tweet_text = $requestData['tweet_text'];
         $tweet_picture = $requestData['tweet_picture'];
+		$latitude = $requestData['latitude'];
+		$longitude = $requestData['longitude'];
+		$country = $requestData['country'];
+		$city = $requestData['city'];
         $db = new TweetOperation();
         $responseData = array();
 
-        if ($db->tweetAdd($user_id, $tweet_text, $tweet_picture)) {
+        if ($db->tweetAdd($user_id, $tweet_text, $tweet_picture, $latitude, $longitude, $country, $city)) {
             $responseData['error'] = false;
             $responseData['message'] = 'Tweet is added.';		
 		} else {

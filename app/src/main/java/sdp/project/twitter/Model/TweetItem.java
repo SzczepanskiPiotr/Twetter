@@ -26,15 +26,15 @@ public class TweetItem {
     @SerializedName("longitude")
     private float longitude;
     @SerializedName("country")
-    private float country;
+    private String country;
     @SerializedName("city")
-    private float city;
+    private String city;
 
     private Location tweetLocation;
 
     public TweetItem(int tweet_id, String tweet_text, String tweet_picture,
               String tweet_date, int user_id, String username , String picture_path,
-              int favouriteCount, boolean isFavourite, Location tweetLocation)
+              int favouriteCount, boolean isFavourite, float latitude, float longitude, String country, String city)
     {
         this.tweet_id = tweet_id;
         this.tweet_text = tweet_text;
@@ -45,7 +45,7 @@ public class TweetItem {
         this.tweet_date = tweet_date;
         this.favouriteCount = favouriteCount;
         this.isFavourite = isFavourite;
-        this.tweetLocation = tweetLocation;
+        this.tweetLocation = new Location(latitude,longitude,country,city);
     }
 
     public int getTweet_id() {
@@ -118,38 +118,6 @@ public class TweetItem {
 
     public void setFavourite(boolean favourite) {
         isFavourite = favourite;
-    }
-
-    public float getLatitude() {
-        return latitude;
-    }
-
-    public void setLatitude(float latitude) {
-        this.latitude = latitude;
-    }
-
-    public float getLongitude() {
-        return longitude;
-    }
-
-    public void setLongitude(float longitude) {
-        this.longitude = longitude;
-    }
-
-    public float getCountry() {
-        return country;
-    }
-
-    public void setCountry(float country) {
-        this.country = country;
-    }
-
-    public float getCity() {
-        return city;
-    }
-
-    public void setCity(float city) {
-        this.city = city;
     }
 
     public Location getTweetLocation() {
