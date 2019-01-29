@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -106,6 +107,17 @@ public class SaveSettings {
     }
 
     public boolean logout() {
+        for(int i : getArrayList("FOLLOWING")) {
+            FirebaseMessaging.getInstance().unsubscribeFromTopic(String.valueOf(i))
+                    .addOnCompleteListener(task -> {
+                        String msg = "Unfollowing on logout from: " + i;
+                        if (!task.isSuccessful()) {
+                            msg = "Failed ufollowing from: " + i;
+                        }
+                        Log.d(TAG, msg);
+                        //Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
+                    });
+        }
         SharedPreferences sharedPreferences = context.getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.clear();

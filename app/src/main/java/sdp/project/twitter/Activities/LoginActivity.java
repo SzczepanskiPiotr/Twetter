@@ -19,11 +19,8 @@ import java.io.UnsupportedEncodingException;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 import sdp.project.tweeter.R;
-import sdp.project.twitter.API.APIService;
 import sdp.project.twitter.API.APIUrl;
 import sdp.project.twitter.API.Result;
 import sdp.project.twitter.Utils.SaveSettings;
@@ -88,17 +85,16 @@ public class LoginActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), "One of the fields is empty!", Toast.LENGTH_SHORT).show();
 
         } else {
-
             //defining the call
             Call<Result> call = APIUrl.getApi().loginUser(name, etPassword.getText().toString(), SaveSettings.getInstance(getApplicationContext()).getToken());
-
             //calling the api
             call.enqueue(new Callback<Result>() {
+
                 @Override
                 public void onResponse(Call<Result> call, Response<Result> response) {
                     //hiding progress dialog
                     hideProgressDialog();
-                    Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_SHORT).show();
                     if (!response.body().getError()) {
                         SaveSettings.getInstance(getApplicationContext()).userLogin(response.body().getUser());
                         SaveSettings.getInstance(getApplicationContext()).saveArrayList(response.body().getFollowing(),"FOLLOWING");
@@ -106,20 +102,17 @@ public class LoginActivity extends AppCompatActivity {
                         {
                             FirebaseMessaging.getInstance().subscribeToTopic(String.valueOf(i))
                                     .addOnCompleteListener(task -> {
-                                        String msg = "Following";
+                                        String msg = "Following on login: " + i;
                                         if (!task.isSuccessful()) {
-                                            msg = "Failed following";
+                                            msg = "Failed following on login: " + i;
                                         }
                                         Log.d(TAG, msg);
-                                        Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+                                        //Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
                                     });
-
-                            Log.i(TAG,i+"");
                         }
                         finish();
                         startActivity(new Intent(getApplicationContext(), MainActivity.class));
                     }
-                    //displaying the message from the response as toast
                 }
 
                 @Override

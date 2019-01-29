@@ -13,7 +13,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.drawable.AnimationDrawable;
-import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -27,6 +26,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.OrientationHelper;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -35,15 +35,14 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -60,12 +59,10 @@ import java.util.Date;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 import sdp.project.tweeter.R;
-import sdp.project.twitter.API.APIService;
 import sdp.project.twitter.API.APIUrl;
 import sdp.project.twitter.API.Result;
+import sdp.project.twitter.Model.Location;
 import sdp.project.twitter.Model.SearchType;
 import sdp.project.twitter.Model.TweetItem;
 import sdp.project.twitter.Utils.CustomAnimationDrawable;
@@ -79,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
     int StartFrom = 0;
     int TweetsType = SearchType.MyFollowing;
     boolean LoadMore = false;
-    //int totalItemCountVisible = 0; //totalItems visible
     LinearLayout ChannelInfo;
     TextView txtNameFollowers;
     ImageView iv_channel_icon;
@@ -100,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    LinearLayoutManager linearLayoutManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -120,7 +117,6 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(getApplicationContext(), LoginActivity.class));
             return;
         }
-
 
         mAuth = FirebaseAuth.getInstance();
         mAuthListener = firebaseAuth -> {
@@ -145,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
         tweetWall = new ArrayList<>();
         myTweetWall = new TweetWall(tweetWall, this);
 
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, OrientationHelper.VERTICAL, false);
+        linearLayoutManager = new LinearLayoutManager(this, OrientationHelper.VERTICAL, false);
         RecyclerView mRecyclerView = findViewById(R.id.RV_tweets);
         mRecyclerView.setLayoutManager(linearLayoutManager);
         mRecyclerView.setAdapter(myTweetWall);
@@ -154,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-                if (linearLayoutManager.findLastVisibleItemPosition() == tweetWall.size() - 1 && LoadMore && !tweetWall.get(tweetWall.size() - 1).tweet_date.equals("notweet")) {
+                if (linearLayoutManager.findLastVisibleItemPosition() == tweetWall.size() - 1 && LoadMore && !tweetWall.get(tweetWall.size() - 1).getTweet_date().equals("notweet")) {
                     LoadMore = false;
                     LoadTweets(tweetWall.size() - 1, TweetsType);
                 }
@@ -197,25 +193,32 @@ public class MainActivity extends AppCompatActivity {
         myMenu = menu;
         // searchView code
         SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-        searchView = (android.widget.SearchView) menu.findItem(R.id.searchbar).getActionView();
+        searchView = (android.support.v7.widget.SearchView) menu.findItem(R.id.searchbar).getActionView();
         searchView.setSearchableInfo(searchManager != null ? searchManager.getSearchableInfo(getComponentName()) : null);
         //final Context co=this;
-        searchView.setOnQueryTextListener(new android.widget.SearchView.OnQueryTextListener() {
+        searchView.setOnQueryTextListener(new android.support.v7.widget.SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 // Toast.makeText(co, query, Toast.LENGTH_LONG).show();
                 Query = query;
                 TweetsType = SearchType.SearchIn;
                 LoadTweets(0, TweetsType);
-                searchView.setIconified(true);
-                searchView.setIconified(true);
+                //searchView.setIconified(true);
+               // searchView.setIconified(true);
                 searchView.clearFocus();
+                myMenu.getItem(0).collapseActionView();
                 return false;
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
                 return false;
+            }
+        });
+        searchView.setOnQueryTextFocusChangeListener(new SearchView.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View view, boolean b) {
+                myMenu.getItem(0).collapseActionView();
             }
         });
         //   searchView.setOnCloseListener(this);
@@ -235,7 +238,6 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
             case R.id.logout: {
-                //TODO: UNSUBSCRIBE FROM TOPICS ON LOGOUT TO NOT RECEIVE NOTIFICATIONS FROM OLD ACCOUNT
                 SaveSettings.getInstance(this.getApplicationContext()).logout();
                 finish();
                 startActivity(new Intent(getApplicationContext(), LoginActivity.class));
@@ -377,7 +379,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public int getItemViewType(int position) {
 
-            switch (tweetWallAdapter.get(position).tweet_date) {
+            switch (tweetWallAdapter.get(position).getTweet_date()) {
                 case "add":
                     return 0;
                 case "loading":
@@ -399,6 +401,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onResponse(Call<Result> call, Response<Result> response) {
                     LoadTweets(0, TweetsType);
                     Log.d(TAG, "pozdro działa");
+                    linearLayoutManager.scrollToPositionWithOffset(0, 0);
                 }
 
                 @Override
@@ -446,14 +449,13 @@ public class MainActivity extends AppCompatActivity {
 
             TweetItem t = tweetWallAdapter.get(position);
             if (t != null) {
-                switch (t.tweet_date) {
+                switch (t.getTweet_date()) {
                     case "add": {
                         final int[] counter = {0};
                         final String[] tweets = {""};
                         ((addTweetViewHolder) holder).etCounter.setText(getString(R.string.character_counter, counter[0]));
                         ((addTweetViewHolder) holder).etPost.setText(tweets[0]);
-                        ((addTweetViewHolder) holder).etPost.setSelection(((addTweetViewHolder) holder).etPost.getText().length());
-
+                        //((addTweetViewHolder) holder).etPost.setSelection(((addTweetViewHolder) holder).etPost.getText().length());
 
                         if (loadedImage) {
                             hideProgressDialog();
@@ -472,18 +474,21 @@ public class MainActivity extends AppCompatActivity {
                                     prepareTweet(((addTweetViewHolder) holder).etPost.getText().toString(),true);
                                 else
                                     prepareTweet(((addTweetViewHolder) holder).etPost.getText().toString(),false);
+                                //TODO: może od razu wyświetlić tweeta i 'uzupełnić' po pozytywnym wrzuceniu do bazy?
                                // tweetWallAdapter.add(1,new TweetItem(999,((addTweetViewHolder) holder).etPost.getText().toString(),"none","noDate", SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(),SaveSettings.getInstance(getApplicationContext()).getUser().getUsername(),SaveSettings.getInstance(getApplicationContext()).getUser().getPicture_path(),0,false));
                                // notifyItemInserted(1);
                                 //GlideApp.with(getApplicationContext()).load(t.tweet_picture).placeholder(R.drawable.round_background_white).optionalCenterCrop().into(((singleTweetHolder) holder).tweet_picture);
-
                                 //GlideApp.with(getApplicationContext()).load(tweetWallAdapter.get(1).tweet_picture).placeholder(R.drawable.round_background_white).optionalCenterCrop().into(((singleTweetHolder) holder).tweet_picture);
-
                               //  tweetWallAdapter.get(1)
+
                                 //hiding progress dialog
                                 hideProgressDialog();
                                 //displaying the message from the response as toast
                                 //Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
                                 ((addTweetViewHolder) holder).etPost.setText("");
+                                //TODO: brzydkie, ale chowa klawiature
+                                InputMethodManager imm = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
+                                imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
                                 loadedImage = false;
                                 loadImageBitmap = null;
                                 TweetsType = SearchType.MyFollowing;
@@ -522,16 +527,16 @@ public class MainActivity extends AppCompatActivity {
                     default: {
 
                         ((singleTweetHolder) holder).tweet_picture.setVisibility(View.VISIBLE);
-                        ((singleTweetHolder) holder).txtUserName.setText(t.username);
+                        ((singleTweetHolder) holder).txtUserName.setText(t.getUsername());
                         ((singleTweetHolder) holder).txtUserName.setOnClickListener((View view) -> {
-                            SelectedUserID = t.user_id;
+                            SelectedUserID = t.getUser_id();
                             if (SaveSettings.getInstance(getApplicationContext()).getUser().getUserID() != SelectedUserID) {
                                 TweetsType = SearchType.OnePerson;
                                 LoadTweets(0, TweetsType);
-                                txtNameFollowers.setText(t.username);
+                                txtNameFollowers.setText(t.getUsername());
                                 //Picasso.get().load(t.picture_path).into(iv_channel_icon);
                                 //Glide.with(getApplicationContext()).load(t.picture_path).into(iv_channel_icon);
-                                GlideApp.with(getApplicationContext()).load(t.picture_path).optionalCenterCrop().into(iv_channel_icon);
+                                GlideApp.with(getApplicationContext()).load(t.getPicture_path()).optionalCenterCrop().into(iv_channel_icon);
 
                                 //TODO: I THINK FOLLOWING STATUS IS ALREADY IN 'tweetlist' REST CALL
                                 Call<Result> call = APIUrl.getApi().checkFollowing(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), SelectedUserID);
@@ -566,24 +571,24 @@ public class MainActivity extends AppCompatActivity {
                             }
                         });
 
-                        ((singleTweetHolder) holder).txt_tweet.setText(t.tweet_text);
+                        ((singleTweetHolder) holder).txt_tweet.setText(t.getTweet_text());
 
-                        ((singleTweetHolder) holder).txt_tweet_date.setText(t.tweet_date);
+                        ((singleTweetHolder) holder).txt_tweet_date.setText(t.getTweet_text());
 
                         //Picasso.get().load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
                         //Glide.with(getApplicationContext()).load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
 
-                        if (t.tweet_picture.equals("none") || t.tweet_picture.equals("null"))
+                        if (t.getTweet_picture().equals("none") || t.getTweet_picture().equals("null"))
                             ((singleTweetHolder) holder).tweet_picture.setVisibility(View.GONE);
                         else
-                            GlideApp.with(getApplicationContext()).load(t.tweet_picture).placeholder(R.drawable.round_background_white).optionalCenterCrop().into(((singleTweetHolder) holder).tweet_picture);
+                            GlideApp.with(getApplicationContext()).load(t.getTweet_picture()).placeholder(R.drawable.round_background_white).optionalCenterCrop().into(((singleTweetHolder) holder).tweet_picture);
                         //Picasso.get().load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
                         //Glide.with(getApplicationContext()).load(t.picture_path).into(((singleTweetHolder) holder).picture_path);
                         //GlideApp.with(getApplicationContext()).load(t.picture_path).optionalCenterCrop().into(((singleTweetHolder) holder).picture_path);
 
 
                         ((singleTweetHolder) holder).iv_share.setOnClickListener(v -> {
-                            if (!t.isFavourite) {
+                            if (!t.isFavourite()) {
                                 CustomAnimationDrawable cad = new CustomAnimationDrawable((AnimationDrawable) getResources().getDrawable(R.drawable.favourite_animation)) {
                                     @Override
                                     protected void onAnimationStart() {
@@ -598,7 +603,7 @@ public class MainActivity extends AppCompatActivity {
                                 ((singleTweetHolder) holder).iv_share.setImageDrawable(cad);
                                 cad.setOneShot(true);
                                 cad.start();
-                                t.favouriteCount++;
+                                t.setFavouriteCount(t.getFavouriteCount()+1);
                             } else {
                                 CustomAnimationDrawable cad = new CustomAnimationDrawable((AnimationDrawable) getResources().getDrawable(R.drawable.unfavourite_animation)) {
                                     @Override
@@ -614,14 +619,14 @@ public class MainActivity extends AppCompatActivity {
                                 ((singleTweetHolder) holder).iv_share.setImageDrawable(cad);
                                 cad.setOneShot(true);
                                 cad.start();
-                                t.favouriteCount--;
+                                t.setFavouriteCount(t.getFavouriteCount()-1);
                             }
 
-                            t.isFavourite = !t.isFavourite;
-                            ((singleTweetHolder) holder).favouriteCount.setText(String.valueOf(t.favouriteCount));
+                            t.setFavourite(!t.isFavourite());
+                            ((singleTweetHolder) holder).favouriteCount.setText(String.valueOf(t.getFavouriteCount()));
 
                             //defining the call
-                            Call<Result> call = APIUrl.getApi().favourite(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), t.tweet_id);
+                            Call<Result> call = APIUrl.getApi().favourite(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), t.getTweet_id());
 
                             //calling the api
                             call.enqueue(new Callback<Result>() {
@@ -658,12 +663,12 @@ public class MainActivity extends AppCompatActivity {
                             });
                         });
 
-                        if (!t.isFavourite)
+                        if (!t.isFavourite())
                             GlideApp.with(getApplicationContext()).load(R.drawable.favourite1).into(((singleTweetHolder) holder).iv_share);
                         else
                             GlideApp.with(getApplicationContext()).load(R.drawable.favourite22).into(((singleTweetHolder) holder).iv_share);
 
-                        ((singleTweetHolder) holder).favouriteCount.setText(String.valueOf(t.favouriteCount));
+                        ((singleTweetHolder) holder).favouriteCount.setText(String.valueOf(t.getFavouriteCount()));
 
                         break;
                     }
@@ -849,10 +854,10 @@ public class MainActivity extends AppCompatActivity {
         //display loading
         if (StartFrom == 0) // add loading at beggining
             tweetWall.add(0, new TweetItem(0, null, null,
-                    "loading", 0, null, null, 0, false));
+                    "loading", 0, null, null, 0, false,new Location()));
         else // add loading at end
             tweetWall.add(new TweetItem(0, null, null,
-                    "loading", 0, null, null, 0, false));
+                    "loading", 0, null, null, 0, false ,new Location()));
 
         myTweetWall.notifyDataSetChanged();
 
@@ -871,12 +876,12 @@ public class MainActivity extends AppCompatActivity {
                     if (StartFrom == 0) {
                         tweetWall.clear();
                         tweetWall.add(new TweetItem(0, null, null,
-                                "add", 0, null, null, 0, false));
+                                "add", 0, null, null, 0, false, new Location()));
                     } else {
                         //remove we are loading now
                         tweetWall.remove(tweetWall.size() - 1);
                         tweetWall.add(new TweetItem(0, null, null,
-                                "notweet", 0, null, null, 0, false));
+                                "notweet", 0, null, null, 0, false, new Location()));
                     }
                     // listnewsData.remove(listnewsData.size()-1);
                     //tweetWall.add(new TweetItem(0, null, null,
@@ -885,7 +890,7 @@ public class MainActivity extends AppCompatActivity {
                     if (StartFrom == 0) {
                         tweetWall.clear();
                         tweetWall.add(new TweetItem(0, null, null,
-                                "add", 0, null, null, 0, false));
+                                "add", 0, null, null, 0, false, new Location()));
 
                     } else {
                         //remove we are loading now
@@ -899,7 +904,7 @@ public class MainActivity extends AppCompatActivity {
                 LoadMore = true;
                 myTweetWall.notifyDataSetChanged();
                 //displaying the message from the response as toast
-                Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
+                //Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
             }
 
             @Override
