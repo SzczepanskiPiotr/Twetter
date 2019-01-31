@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_login"
     android:layout_width="match_parent"
@@ -15,6 +16,14 @@
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="256dp"
+            android:layout_height="256dp"
+            android:layout_gravity="center"
+            android:paddingBottom="20dp"
+            android:src="@drawable/logo" />
 
         <EditText
             android:id="@+id/etName"
@@ -37,7 +46,7 @@
             android:layout_height="60dp"
             android:text="@string/login_loginButton"
             android:id="@+id/buLogin"
-            android:background="@drawable/round_background_blue"
+            android:background="@drawable/round_background_dark_blue"
             android:layout_marginTop="10dp"
             android:paddingRight="5dp"
             android:textSize="10dp"

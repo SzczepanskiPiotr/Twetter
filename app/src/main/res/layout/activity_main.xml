@@ -22,34 +22,22 @@
         <LinearLayout
             android:id="@+id/ChannelInfo"
             android:layoutDirection="rtl"
-            android:background="#ffffff"
-            android:orientation="vertical"
+            android:background="@color/colorPrimary"
+            android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="0">
+
+            <ImageView
+                android:id="@+id/iv_channel_icon"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_marginStart="5dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_weight="0"
+                android:src="@drawable/no_name_user" />
             <LinearLayout
-                android:layout_marginBottom="2dp"
-                android:layout_marginRight="0dp"
-                android:layout_marginLeft="0dp"
-                android:layout_marginTop="0dp"
-                android:paddingBottom="4dp"
-                android:gravity="center"
-                android:background="#94bade"
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:paddingTop="4dp"
-                android:paddingRight="5dp"
-                android:paddingLeft="6dp">
-
-                <ImageView
-                    android:id="@+id/iv_channel_icon"
-                    android:layout_width="80px"
-                    android:layout_height="80px"
-                    android:src="@drawable/no_name_user"
-                    android:layout_weight="0" />
-
-                <LinearLayout
                     android:orientation="vertical"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -97,19 +85,21 @@
                         android:textColor="#ffffff" />
                 </LinearLayout>
 
-                <Button
-                    android:id="@+id/buFollow"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_alignParentTop="true"
-                    android:layout_weight="0"
-                    android:background="@drawable/press_button_gradient_blue"
-                    android:onClick="buFollowers"
-                    android:text="@string/main_FollowButton"
-                    android:textColor="#fdfffa"
-                    android:textSize="10dp" />
-            </LinearLayout>
+            <Button
+                android:id="@+id/buFollow"
+                android:layout_width="100dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="20sp"
+                android:layout_weight="0"
+                android:background="@drawable/press_button_gradient_blue"
+                android:onClick="buFollowers"
+                android:layout_marginBottom="5dp"
+                android:layout_marginTop="5dp"
+                android:text="@string/main_FollowButton"
+                android:textColor="#fdfffa"
+                android:textSize="10dp" />
+
         </LinearLayout>
 
         <RelativeLayout
@@ -121,8 +111,10 @@
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/RV_tweets"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-/>
+                android:layout_height="match_parent"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true" />
+
         </RelativeLayout>
     </LinearLayout>
 </RelativeLayout>
