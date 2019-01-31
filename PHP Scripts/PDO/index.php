@@ -41,7 +41,7 @@ $app->post('/register', function (Request $request, Response $response) {
             $responseData['message'] = 'Some error occurred';
         } elseif ($result == USER_EXIST) {
             $responseData['error'] = true;
-            $responseData['message'] = 'This email already exist, please login';
+            $responseData['message'] = 'This email/username already exists, please login';
         }
 
         $response->getBody()->write(json_encode($responseData));

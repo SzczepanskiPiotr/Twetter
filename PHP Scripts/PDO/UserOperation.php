@@ -13,7 +13,7 @@ class UserOperation
     //Method to create a new user
     function registerUser($name, $email, $pass, $picture_path)
     {
-        if (!$this->isUserExist($email)) {
+        if (!$this->isUserExist($email, $name)) {
             $password = md5($pass);
             $stmt = DB::prepare("INSERT INTO users (username, email, password, picture_path) VALUES (?, ?, ?, ?)");
             if ($stmt->execute([$name, $email, $password, $picture_path]))
@@ -143,10 +143,10 @@ class UserOperation
 */
  
     //Method to check if email already exist
-    function isUserExist($email)
+    function isUserExist($email, $name)
     {
-        $stmt = DB::prepare("SELECT user_id FROM users WHERE email =?");
-        $stmt->execute([$email]);
+        $stmt = DB::prepare("SELECT user_id FROM users WHERE email=? OR username=?");
+        $stmt->execute([$email, $name]);
         //$stmt->store_result();
         return $stmt->fetch();
     }
