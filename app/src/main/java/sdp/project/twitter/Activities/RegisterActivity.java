@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
@@ -44,6 +45,8 @@ import sdp.project.twitter.API.*;
 import sdp.project.twitter.API.Result;
 import sdp.project.twitter.Utils.SaveSettings;
 
+import static sdp.project.twitter.Activities.MainActivity.getExifRotation;
+
 public class RegisterActivity extends AppCompatActivity {
 
     EditText etName;
@@ -60,6 +63,7 @@ public class RegisterActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
+        getSupportActionBar().hide();
         etName = findViewById(R.id.etName);
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
@@ -86,7 +90,6 @@ public class RegisterActivity extends AppCompatActivity {
         StorageReference storageRef = storage.getReferenceFromUrl("gs://tweeter-55347.appspot.com");
         DateFormat df = DateFormat.getDateTimeInstance();
         Date dateobj = new Date();
-
         final String ImagePath = df.format(dateobj) + ".jpg";
         final StorageReference avatarsStorage = storageRef.child(ImagePath);
         ivUserImage.setDrawingCacheEnabled(true);
@@ -108,7 +111,6 @@ public class RegisterActivity extends AppCompatActivity {
             try {
                 //for space with name
                 name = java.net.URLEncoder.encode(etName.getText().toString(), "UTF-8");
-                downloadUrl = java.net.URLEncoder.encode(downloadUrl, "UTF-8");
             } catch (UnsupportedEncodingException e) {
 
             }
@@ -241,6 +243,7 @@ public class RegisterActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == RESULT_LOAD_IMAGE && resultCode == RESULT_OK && null != data) {
+            showProgressDialog();
             Uri selectedImage = data.getData();
             String[] filePathColumn = {MediaStore.Images.Media.DATA};
 
@@ -252,7 +255,46 @@ public class RegisterActivity extends AppCompatActivity {
             int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
             String picturePath = cursor.getString(columnIndex);
             cursor.close();
-            ivUserImage.setImageBitmap(BitmapFactory.decodeFile(picturePath));
+            // postImage.setImageBitmap(BitmapFactory.decodeFile(picturePath));
+
+            final BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inMutable = true;
+            Bitmap b = BitmapFactory.decodeFile(picturePath, options);
+            if (getExifRotation(picturePath) != 0) {
+                Matrix matrix = new Matrix();
+
+                matrix.postRotate(getExifRotation(picturePath));
+
+                Bitmap scaledBitmap = Bitmap.createScaledBitmap(b, b.getWidth(), b.getHeight(), true);
+
+                b = Bitmap.createBitmap(scaledBitmap, 0, 0, scaledBitmap.getWidth(), scaledBitmap.getHeight(), matrix, true);
+            }
+            float maxHeight = 512;
+            float maxWidth = 512;
+            float actualWidth = b.getWidth();
+            float actualHeight = b.getHeight();
+            float imgRatio = (actualWidth / actualHeight);
+            float maxRatio = maxWidth / maxHeight;
+            Log.i(TAG, "ACT_WIDTH:" + actualWidth + "ACT_HEIGHT:" + actualHeight + "IMG_RATIO" + imgRatio);
+
+            //      width and height values are set maintaining the aspect ratio of the image
+            if (actualHeight > maxHeight || actualWidth > maxWidth) {
+                if (imgRatio < maxRatio) {
+                    imgRatio = maxHeight / actualHeight;
+                    actualWidth = (imgRatio * actualWidth);
+                    actualHeight = maxHeight;
+                } else if (imgRatio > maxRatio) {
+                    imgRatio = maxWidth / actualWidth;
+                    actualHeight = (imgRatio * actualHeight);
+                    actualWidth = maxWidth;
+                }
+            }
+            Log.i(TAG, "NEW_WIDTH:" + Math.round(actualWidth) + "NEW_HEIGHT:" + Math.round(actualHeight) + "IMG_RATIO" + imgRatio + "ROTATION:" + getExifRotation(picturePath));
+
+            //iv_temp.setImageBitmap(Bitmap.createScaledBitmap(b,Math.round(actualWidth),Math.round(actualHeight),false));
+            //iv_temp.setVisibility(ImageView.VISIBLE);
+            ivUserImage.setImageBitmap(Bitmap.createScaledBitmap(b, Math.round(actualWidth), Math.round(actualHeight), false));
+            hideProgressDialog();
         }
     }
 }

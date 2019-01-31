@@ -1,5 +1,7 @@
 package sdp.project.twitter.Model;
 
+import android.util.Log;
+
 public class Location {
 
     private float latitude;

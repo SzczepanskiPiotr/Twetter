@@ -38,6 +38,7 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        getSupportActionBar().hide();
         etName = findViewById(R.id.etName);
         etPassword = findViewById(R.id.etPassword);
         TextView goToRegister = findViewById(R.id.goToRegister);
@@ -83,7 +84,6 @@ public class LoginActivity extends AppCompatActivity {
         if (etName.getText().toString().equals("") || etPassword.getText().toString().equals("")) {
             hideProgressDialog();
             Toast.makeText(getApplicationContext(), "One of the fields is empty!", Toast.LENGTH_SHORT).show();
-
         } else {
             //defining the call
             Call<Result> call = APIUrl.getApi().loginUser(name, etPassword.getText().toString(), SaveSettings.getInstance(getApplicationContext()).getToken());

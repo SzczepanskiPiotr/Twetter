@@ -45,6 +45,10 @@ public class TweetItem {
         this.tweet_date = tweet_date;
         this.favouriteCount = favouriteCount;
         this.isFavourite = isFavourite;
+        this.country = country;
+        this.city = city;
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.tweetLocation = new Location(latitude,longitude,country,city);
     }
 
@@ -126,5 +130,11 @@ public class TweetItem {
 
     public void setTweetLocation(Location tweetLocation) {
         this.tweetLocation = tweetLocation;
+    }
+
+    public void setTweetLocationFromData(){
+        if((country != null && city != null))
+            if(!city.equals("XX") && !country.equals("XX"))
+                this.tweetLocation = new Location(latitude,longitude,country,city);
     }
 }

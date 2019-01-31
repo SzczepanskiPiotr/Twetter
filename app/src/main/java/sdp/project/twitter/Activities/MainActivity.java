@@ -1,5 +1,6 @@
 package sdp.project.twitter.Activities;
 
+import android.Manifest;
 import android.app.ProgressDialog;
 import android.app.SearchManager;
 import android.content.BroadcastReceiver;
@@ -16,6 +17,7 @@ import android.graphics.drawable.AnimationDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
@@ -43,6 +45,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
+import com.bumptech.glide.request.RequestOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -67,6 +71,7 @@ import sdp.project.twitter.Model.SearchType;
 import sdp.project.twitter.Model.TweetItem;
 import sdp.project.twitter.Utils.CustomAnimationDrawable;
 import sdp.project.twitter.Utils.GlideApp;
+import sdp.project.twitter.Utils.MyGeocoderUtil;
 import sdp.project.twitter.Utils.SaveSettings;
 
 public class MainActivity extends AppCompatActivity {
@@ -97,6 +102,7 @@ public class MainActivity extends AppCompatActivity {
     };
 
     LinearLayoutManager linearLayoutManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -135,12 +141,10 @@ public class MainActivity extends AppCompatActivity {
                 Log.w(TAG, "signInAnonymously", task.getException());
             }
         });
-
         Log.i(TAG, "LOGGING IN USER");
 
         tweetWall = new ArrayList<>();
         myTweetWall = new TweetWall(tweetWall, this);
-
         linearLayoutManager = new LinearLayoutManager(this, OrientationHelper.VERTICAL, false);
         RecyclerView mRecyclerView = findViewById(R.id.RV_tweets);
         mRecyclerView.setLayoutManager(linearLayoutManager);
@@ -204,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
                 TweetsType = SearchType.SearchIn;
                 LoadTweets(0, TweetsType);
                 //searchView.setIconified(true);
-               // searchView.setIconified(true);
+                // searchView.setIconified(true);
                 searchView.clearFocus();
                 myMenu.getItem(0).collapseActionView();
                 return false;
@@ -230,11 +234,11 @@ public class MainActivity extends AppCompatActivity {
         // handle item selection
         switch (item.getItemId()) {
             case R.id.home: {
-                if (TweetsType != SearchType.MyFollowing) {
+                //if (TweetsType != SearchType.MyFollowing) {
                     searchView.setIconified(true);
                     TweetsType = SearchType.MyFollowing;
                     LoadTweets(0, TweetsType);
-                }
+               // }
                 return true;
             }
             case R.id.logout: {
@@ -255,11 +259,12 @@ public class MainActivity extends AppCompatActivity {
             Operation = 1;
             buFollow.setSelected(true);
             buFollow.setText(R.string.buFollow_unFollow);
-            //buFollow.set
+            FirebaseMessaging.getInstance().subscribeToTopic(String.valueOf(SelectedUserID));
         } else {
             buFollow.setSelected(false);
             Operation = 2;
             buFollow.setText(R.string.buFollow_follow);
+            FirebaseMessaging.getInstance().unsubscribeFromTopic(String.valueOf(SelectedUserID));
         }
         showProgressDialog();
         //defining the call
@@ -334,6 +339,8 @@ public class MainActivity extends AppCompatActivity {
             ImageView picture_path;
             ImageView iv_share;
             TextView favouriteCount;
+            TextView txt_location;
+            ImageView iv_location;
 
 
             singleTweetHolder(View viewItem) {
@@ -346,6 +353,8 @@ public class MainActivity extends AppCompatActivity {
                 picture_path = viewItem.findViewById(R.id.picture_path);
                 iv_share = viewItem.findViewById(R.id.iv_share);
                 favouriteCount = viewItem.findViewById(R.id.txt_favouriteCount);
+                txt_location = viewItem.findViewById(R.id.txt_location);
+                iv_location = viewItem.findViewById(R.id.iv_location);
             }
         }
 
@@ -391,16 +400,14 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-
-        void sendTweetToDb(String tweetText, String imageUrl){
+        void sendTweetToDb(String tweetText, String imageUrl, Location location) {
             //defining the call
-            Call<Result> call = APIUrl.getApi().tweetAdd(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), tweetText, imageUrl);
+            Call<Result> call = APIUrl.getApi().tweetAdd(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), tweetText, imageUrl, location.getLatitude(), location.getLongitude(), location.getCountry(), location.getCity());
             //calling the api
             call.enqueue(new Callback<Result>() {
                 @Override
                 public void onResponse(Call<Result> call, Response<Result> response) {
                     LoadTweets(0, TweetsType);
-                    Log.d(TAG, "pozdro działa");
                     linearLayoutManager.scrollToPositionWithOffset(0, 0);
                 }
 
@@ -412,13 +419,32 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        void prepareTweet(String tweetText,boolean hasImage) {
+        void getLocationForTweet(String tweetText, String imageUrl, boolean addLocation) {
+            if (addLocation) {
+                MyGeocoderUtil.requestSingleUpdate(context,
+                        new MyGeocoderUtil.LocationCallback() {
+                            @Override
+                            public void onNewLocationAvailable(Location location) {
+                                Log.d("Location", "my location is " + location.getCountry() + " " + location.getCity());
+                                sendTweetToDb(tweetText, imageUrl, new Location(location.getLatitude(), location.getLongitude(), location.getCountry(), location.getCity()));
+                            }
+
+                            @Override
+                            public void failedToGetLocation() {
+                                Toast.makeText(getApplicationContext(),"Could not obtain location",Toast.LENGTH_SHORT).show();
+                                sendTweetToDb(tweetText, imageUrl, new Location(0f, 0f, "XX", "XX"));
+                            }
+                        });
+            } else
+                sendTweetToDb(tweetText, imageUrl, new Location(0f, 0f, "XX", "XX"));
+        }
+
+        void prepareTweet(String tweetText, boolean hasImage) {
             Log.d(TAG, "TweetAdd with picture");
             showProgressDialog();
-            if(hasImage) {
-                String downloadUrl;
+            if (hasImage) {
+                //Upload immage to firebase
                 FirebaseStorage storage = FirebaseStorage.getInstance();
-                // Create a storage reference from our app
                 StorageReference storageRef = storage.getReferenceFromUrl("gs://tweeter-55347.appspot.com/");
                 DateFormat df = DateFormat.getDateTimeInstance();
                 Date dateobj = new Date();
@@ -434,13 +460,10 @@ public class MainActivity extends AppCompatActivity {
                 })
                         .addOnSuccessListener(taskSnapshot -> picRef.getDownloadUrl()
                                 .addOnSuccessListener(uri -> {
-                                    sendTweetToDb(tweetText,uri.toString());
-                                    hideProgressDialog();
-                                    Toast.makeText(context, "Tweet added", Toast.LENGTH_SHORT).show();
+                                    CheckGpsPermission(tweetText, uri.toString());
                                 }));
-            }
-            else{
-                sendTweetToDb(tweetText,"none");
+            } else {
+                CheckGpsPermission(tweetText, "none");
             }
         }
 
@@ -454,32 +477,37 @@ public class MainActivity extends AppCompatActivity {
                         final int[] counter = {0};
                         final String[] tweets = {""};
                         ((addTweetViewHolder) holder).etCounter.setText(getString(R.string.character_counter, counter[0]));
-                        ((addTweetViewHolder) holder).etPost.setText(tweets[0]);
+                        //((addTweetViewHolder) holder).etPost.setText(tweets[0]);
                         //((addTweetViewHolder) holder).etPost.setSelection(((addTweetViewHolder) holder).etPost.getText().length());
 
                         if (loadedImage) {
                             hideProgressDialog();
+                            ((addTweetViewHolder) holder).etPost.setText(tweetText);
                             ((addTweetViewHolder) holder).iv_temp.setVisibility(ImageView.VISIBLE);
                             ((addTweetViewHolder) holder).iv_temp.setImageBitmap(loadImageBitmap);
                         } else {
+                            ((addTweetViewHolder) holder).etPost.setText(tweets[0]);
                             ((addTweetViewHolder) holder).iv_temp.setVisibility(ImageView.INVISIBLE);
                             ((addTweetViewHolder) holder).iv_temp.setImageBitmap(null);
                         }
-                        ((addTweetViewHolder) holder).iv_attach.setOnClickListener(view -> CheckUserPermission());
+                        ((addTweetViewHolder) holder).iv_attach.setOnClickListener(view -> {
+                            tweetText = ((addTweetViewHolder) holder).etPost.getText().toString();
+                            CheckUserPermission();
+                        });
                         ((addTweetViewHolder) holder).iv_post.setOnClickListener(view -> {
                             if (((addTweetViewHolder) holder).etPost.length() <= 0)
                                 Toast.makeText(context, "Tweet is empty.", Toast.LENGTH_SHORT).show();
                             else if (((addTweetViewHolder) holder).etPost.length() <= 150) {
                                 if (((addTweetViewHolder) holder).iv_temp.getVisibility() == View.VISIBLE)
-                                    prepareTweet(((addTweetViewHolder) holder).etPost.getText().toString(),true);
+                                    prepareTweet(((addTweetViewHolder) holder).etPost.getText().toString(), true);
                                 else
-                                    prepareTweet(((addTweetViewHolder) holder).etPost.getText().toString(),false);
+                                    prepareTweet(((addTweetViewHolder) holder).etPost.getText().toString(), false);
                                 //TODO: może od razu wyświetlić tweeta i 'uzupełnić' po pozytywnym wrzuceniu do bazy?
-                               // tweetWallAdapter.add(1,new TweetItem(999,((addTweetViewHolder) holder).etPost.getText().toString(),"none","noDate", SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(),SaveSettings.getInstance(getApplicationContext()).getUser().getUsername(),SaveSettings.getInstance(getApplicationContext()).getUser().getPicture_path(),0,false));
-                               // notifyItemInserted(1);
+                                // tweetWallAdapter.add(1,new TweetItem(999,((addTweetViewHolder) holder).etPost.getText().toString(),"none","noDate", SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(),SaveSettings.getInstance(getApplicationContext()).getUser().getUsername(),SaveSettings.getInstance(getApplicationContext()).getUser().getPicture_path(),0,false));
+                                // notifyItemInserted(1);
                                 //GlideApp.with(getApplicationContext()).load(t.tweet_picture).placeholder(R.drawable.round_background_white).optionalCenterCrop().into(((singleTweetHolder) holder).tweet_picture);
                                 //GlideApp.with(getApplicationContext()).load(tweetWallAdapter.get(1).tweet_picture).placeholder(R.drawable.round_background_white).optionalCenterCrop().into(((singleTweetHolder) holder).tweet_picture);
-                              //  tweetWallAdapter.get(1)
+                                //  tweetWallAdapter.get(1)
 
                                 //hiding progress dialog
                                 hideProgressDialog();
@@ -487,7 +515,7 @@ public class MainActivity extends AppCompatActivity {
                                 //Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
                                 ((addTweetViewHolder) holder).etPost.setText("");
                                 //TODO: brzydkie, ale chowa klawiature
-                                InputMethodManager imm = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
+                                InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
                                 imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
                                 loadedImage = false;
                                 loadImageBitmap = null;
@@ -534,9 +562,7 @@ public class MainActivity extends AppCompatActivity {
                                 TweetsType = SearchType.OnePerson;
                                 LoadTweets(0, TweetsType);
                                 txtNameFollowers.setText(t.getUsername());
-                                //Picasso.get().load(t.picture_path).into(iv_channel_icon);
-                                //Glide.with(getApplicationContext()).load(t.picture_path).into(iv_channel_icon);
-                                GlideApp.with(getApplicationContext()).load(t.getPicture_path()).optionalCenterCrop().into(iv_channel_icon);
+                                GlideApp.with(getApplicationContext()).load(t.getPicture_path()).placeholder(R.drawable.logo1).optionalCenterCrop().apply(RequestOptions.bitmapTransform(new RoundedCorners(8))).into(iv_channel_icon);
 
                                 //TODO: I THINK FOLLOWING STATUS IS ALREADY IN 'tweetlist' REST CALL
                                 Call<Result> call = APIUrl.getApi().checkFollowing(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), SelectedUserID);
@@ -550,16 +576,16 @@ public class MainActivity extends AppCompatActivity {
                                         if (response.body().getError()) {
                                             buFollow.setText(R.string.buFollow_follow);
                                             buFollow.setSelected(false);
+                                            Log.d(TAG, "Unfollowing user: " + SelectedUserID);
                                             FirebaseMessaging.getInstance().unsubscribeFromTopic(String.valueOf(SelectedUserID));
 
                                         } else {
                                             FirebaseMessaging.getInstance().subscribeToTopic(String.valueOf(SelectedUserID));
+                                            Log.d(TAG, "Following user: " + SelectedUserID);
                                             //SaveSettings.getInstance(getApplicationContext()).saveArrayList(SaveSettings.getInstance(getApplicationContext()).getArrayList("FOLLOWING").,"FOLLOWING");
                                             buFollow.setText(R.string.buFollow_unFollow);
                                             buFollow.setSelected(true);
                                         }
-                                        //displaying the message from the response as toast
-                                        Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
                                     }
 
                                     @Override
@@ -572,19 +598,24 @@ public class MainActivity extends AppCompatActivity {
                         });
 
                         ((singleTweetHolder) holder).txt_tweet.setText(t.getTweet_text());
+                        ((singleTweetHolder) holder).txt_tweet_date.setText(t.getTweet_date());
+                        if (t.getTweetLocation() != null && t.getTweetLocation().getCity() != null && t.getTweetLocation().getCountry() != null) {
+                            GlideApp.with(getApplicationContext()).load(R.drawable.gps_icon).into(((singleTweetHolder) holder).iv_location);
+                            ((singleTweetHolder) holder).txt_location.setText(t.getTweetLocation().getCity() + ", " + t.getTweetLocation().getCountry());
+                        } else {
+                            GlideApp.with(getApplicationContext()).load(R.drawable.no_gps_icon).into(((singleTweetHolder) holder).iv_location);
+                            ((singleTweetHolder) holder).txt_location.setText("");
 
-                        ((singleTweetHolder) holder).txt_tweet_date.setText(t.getTweet_text());
+                        }
 
-                        //Picasso.get().load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
-                        //Glide.with(getApplicationContext()).load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
 
                         if (t.getTweet_picture().equals("none") || t.getTweet_picture().equals("null"))
                             ((singleTweetHolder) holder).tweet_picture.setVisibility(View.GONE);
                         else
                             GlideApp.with(getApplicationContext()).load(t.getTweet_picture()).placeholder(R.drawable.round_background_white).optionalCenterCrop().into(((singleTweetHolder) holder).tweet_picture);
-                        //Picasso.get().load(t.tweet_picture).into(((singleTweetHolder) holder).tweet_picture);
-                        //Glide.with(getApplicationContext()).load(t.picture_path).into(((singleTweetHolder) holder).picture_path);
-                        //GlideApp.with(getApplicationContext()).load(t.picture_path).optionalCenterCrop().into(((singleTweetHolder) holder).picture_path);
+
+
+                        GlideApp.with(getApplicationContext()).load(t.getPicture_path()).placeholder(R.drawable.no_name_user).optionalCenterCrop().apply(RequestOptions.bitmapTransform(new RoundedCorners(8))).into(((singleTweetHolder) holder).picture_path);
 
 
                         ((singleTweetHolder) holder).iv_share.setOnClickListener(v -> {
@@ -603,7 +634,7 @@ public class MainActivity extends AppCompatActivity {
                                 ((singleTweetHolder) holder).iv_share.setImageDrawable(cad);
                                 cad.setOneShot(true);
                                 cad.start();
-                                t.setFavouriteCount(t.getFavouriteCount()+1);
+                                t.setFavouriteCount(t.getFavouriteCount() + 1);
                             } else {
                                 CustomAnimationDrawable cad = new CustomAnimationDrawable((AnimationDrawable) getResources().getDrawable(R.drawable.unfavourite_animation)) {
                                     @Override
@@ -619,40 +650,21 @@ public class MainActivity extends AppCompatActivity {
                                 ((singleTweetHolder) holder).iv_share.setImageDrawable(cad);
                                 cad.setOneShot(true);
                                 cad.start();
-                                t.setFavouriteCount(t.getFavouriteCount()-1);
+                                t.setFavouriteCount(t.getFavouriteCount() - 1);
                             }
 
                             t.setFavourite(!t.isFavourite());
                             ((singleTweetHolder) holder).favouriteCount.setText(String.valueOf(t.getFavouriteCount()));
-
                             //defining the call
                             Call<Result> call = APIUrl.getApi().favourite(SaveSettings.getInstance(getApplicationContext()).getUser().getUserID(), t.getTweet_id());
-
                             //calling the api
                             call.enqueue(new Callback<Result>() {
 
 
                                 @Override
                                 public void onResponse(Call<Result> call, Response<Result> response) {
-                                    Log.i(TAG, "restcall");
                                     //hiding progress dialog
                                     hideProgressDialog();
-                                    /*if (response.body().getError()) {
-                                        GlideApp.with(getApplicationContext()).load(R.drawable.favourite1).into(((singleTweetHolder) holder).iv_share);
-                                        t.isFavourite = false;
-                                        t.favouriteCount--;
-                                    }
-                                    else{
-                                        //GlideApp.with(getApplicationContext()).load(R.drawable.favourite22).into(((singleTweetHolder) holder).iv_share);
-                                        ((singleTweetHolder) holder).iv_share.setImageResource(R.drawable.favourite_animation);
-                                        AnimationDrawable favouriteAnimation = (AnimationDrawable)((singleTweetHolder) holder).iv_share.getDrawable();
-                                        favouriteAnimation.start();
-                                        t.isFavourite = true;
-                                        t.favouriteCount++;
-                                    }
-                                    ((singleTweetHolder) holder).favouriteCount.setText(String.valueOf(t.favouriteCount));*/
-                                    //displaying the message from the response as toast
-                                    Toast.makeText(getApplicationContext(), response.body().getMessage(), Toast.LENGTH_LONG).show();
                                 }
 
                                 @Override
@@ -669,7 +681,6 @@ public class MainActivity extends AppCompatActivity {
                             GlideApp.with(getApplicationContext()).load(R.drawable.favourite22).into(((singleTweetHolder) holder).iv_share);
 
                         ((singleTweetHolder) holder).favouriteCount.setText(String.valueOf(t.getFavouriteCount()));
-
                         break;
                     }
                 }
@@ -724,7 +735,29 @@ public class MainActivity extends AppCompatActivity {
         LoadImage();
     }
 
+    void CheckGpsPermission(String tweetText, String downloadUrl) {
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) !=
+                    PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
+                    PackageManager.PERMISSION_GRANTED) {
+                this.tweetText = tweetText;
+                this.downloadUrl = downloadUrl;
+                requestPermissions(new String[]{
+                                Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                        REQUEST_CODE_ASK_GPSPERMISSIONS);
+                return;
+            }
+            Log.d(TAG, "Gps permissions already granted");
+        }
+        myTweetWall.getLocationForTweet(tweetText, downloadUrl, true);
+    }
+
+    String tweetText;
+    String downloadUrl;
+
     final private int REQUEST_CODE_ASK_PERMISSIONS = 123;
+    final private int REQUEST_CODE_ASK_GPSPERMISSIONS = 321;
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -734,12 +767,19 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case REQUEST_CODE_ASK_PERMISSIONS:
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Log.i(TAG, "Permission granted");
+                    Log.i(TAG, "Storage permission granted");
                     LoadImage();
                 } else {
                     Toast.makeText(this, "your message", Toast.LENGTH_SHORT).show();
                 }
                 break;
+            case REQUEST_CODE_ASK_GPSPERMISSIONS:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.i(TAG, "GPS permission granted");
+                    myTweetWall.getLocationForTweet(tweetText, downloadUrl, true);
+                } else {
+                    myTweetWall.getLocationForTweet(tweetText, downloadUrl, false);
+                }
             default:
                 super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
@@ -854,10 +894,10 @@ public class MainActivity extends AppCompatActivity {
         //display loading
         if (StartFrom == 0) // add loading at beggining
             tweetWall.add(0, new TweetItem(0, null, null,
-                    "loading", 0, null, null, 0, false,new Location()));
+                    "loading", 0, null, null, 0, false, 1, 2, "country", "city"));
         else // add loading at end
             tweetWall.add(new TweetItem(0, null, null,
-                    "loading", 0, null, null, 0, false ,new Location()));
+                    "loading", 0, null, null, 0, false, 1, 2, "country", "city"));
 
         myTweetWall.notifyDataSetChanged();
 
@@ -876,21 +916,18 @@ public class MainActivity extends AppCompatActivity {
                     if (StartFrom == 0) {
                         tweetWall.clear();
                         tweetWall.add(new TweetItem(0, null, null,
-                                "add", 0, null, null, 0, false, new Location()));
+                                "add", 0, null, null, 0, false, 1, 2, "country", "city"));
                     } else {
                         //remove we are loading now
                         tweetWall.remove(tweetWall.size() - 1);
                         tweetWall.add(new TweetItem(0, null, null,
-                                "notweet", 0, null, null, 0, false, new Location()));
+                                "notweet", 0, null, null, 0, false, 1, 2, "country", "city"));
                     }
-                    // listnewsData.remove(listnewsData.size()-1);
-                    //tweetWall.add(new TweetItem(0, null, null,
-                    //"notweet", 0, null, null, 0, false));
                 } else {
                     if (StartFrom == 0) {
                         tweetWall.clear();
                         tweetWall.add(new TweetItem(0, null, null,
-                                "add", 0, null, null, 0, false, new Location()));
+                                "add", 0, null, null, 0, false, 1, 2, "country", "city"));
 
                     } else {
                         //remove we are loading now
@@ -899,7 +936,10 @@ public class MainActivity extends AppCompatActivity {
 
                     // try to add the resourcess
                     //add data and view it
-                    tweetWall.addAll(response.body().getTweets());
+                    for (TweetItem t : response.body().getTweets()) {
+                        t.setTweetLocationFromData();
+                        tweetWall.add(t);
+                    }
                 }
                 LoadMore = true;
                 myTweetWall.notifyDataSetChanged();
