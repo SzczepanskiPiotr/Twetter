@@ -1,0 +1,2 @@
+UPDATE tweets t1 SET favoruiteCount = (SELECT COUNT(*) FROM favourited f1 GROUP BY tweet_id HAVING f1.tweet_id = t1.tweet_id) ;//UPDATE TABELI
+UPDATE tweets SET favoruiteCount = (SELECT COUNT(*) FROM favourited GROUP BY tweet_id HAVING tweet_id = 124) WHERE tweet_id = 124;//UPDATE WIERSZA
